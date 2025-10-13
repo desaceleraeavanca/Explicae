@@ -1,13 +1,4 @@
-import {
-  checkAnonymousAccess,
-  checkUserAccess,
-  trackGeneration,
-  consumeCredit,
-  getAnonymousId,
-} from "@/lib/access-control"
-import { getModelForUser, generateText, OpenRouterMessage } from "@/lib/openrouter"
-import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { generateText } from "@/lib/openrouter"
 
 export async function POST(request: Request) {
   console.log("[DEBUG] Iniciando geração de analogias...")
@@ -22,111 +13,21 @@ export async function POST(request: Request) {
       return Response.json({ error: "Conceito e público-alvo são obrigatórios" }, { status: 400 })
     }
 
-    console.log("[DEBUG] Criando cliente Supabase...")
-    const supabase = await createClient()
-    console.log("[DEBUG] Cliente Supabase criado com sucesso")
-    
-    console.log("[DEBUG] Obtendo usuário...")
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    console.log("[DEBUG] Usuário:", user ? `ID: ${user.id}` : "Anônimo")
+    // Modelo padrão para todos os usuários
+    const model = "openai/gpt-4o-mini"
 
-    let accessCheck
-    let modelToUse = "openai/gpt-4o-mini" // Default for anonymous users
-
-    if (!user) {
-      console.log("[DEBUG] Processando usuário anônimo...")
-      const anonymousId = getAnonymousId()
-      console.log("[DEBUG] ID anônimo:", anonymousId)
-      accessCheck = await checkAnonymousAccess(anonymousId)
-      console.log("[DEBUG] Verificação de acesso anônimo:", accessCheck)
-
-      if (!accessCheck.canGenerate) {
-        console.log("[DEBUG] Limite de gerações atingido para usuário anônimo")
-        return Response.json(
-          {
-            error: "limit_reached",
-            message: "Você atingiu o limite de gerações gratuitas. Cadastre-se para continuar!",
-            redirectTo: "/auth/signup",
-          },
-          { status: 403 },
-        )
-      }
-
-      // Set cookie for anonymous tracking
-      console.log("[DEBUG] Definindo cookie para usuário anônimo...")
-      const cookieStore = cookies()
-      cookieStore.set("anonymous_id", anonymousId, {
-        maxAge: 60 * 60 * 24 * 365, // 1 year
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-      })
-
-      // Track generation
-      console.log("[DEBUG] Rastreando geração para usuário anônimo...")
-      await trackGeneration(null, anonymousId, concept, audience)
-      console.log("[DEBUG] Geração rastreada com sucesso")
-    } else {
-      console.log("[DEBUG] Processando usuário autenticado...")
-      accessCheck = await checkUserAccess(user.id)
-      console.log("[DEBUG] Verificação de acesso do usuário:", accessCheck)
-
-      if (!accessCheck.canGenerate) {
-        let message = "Você atingiu o limite do seu plano."
-        const redirectTo = "/pricing"
-
-        if (accessCheck.reason === "trial_expired") {
-          message = "Seu período de teste expirou. Faça upgrade para continuar!"
-        } else if (accessCheck.reason === "limit_reached") {
-          message = "Você atingiu o limite de 100 gerações do plano gratuito. Faça upgrade!"
-        } else if (accessCheck.reason === "no_credits") {
-          message = "Seus créditos acabaram. Recarregue para continuar!"
-        } else if (accessCheck.reason === "subscription_cancelled") {
-          message = "Sua assinatura foi cancelada. Renove para continuar!"
-        } else if (accessCheck.reason === "payment_pending") {
-          message = "Seu pagamento está pendente. Regularize para continuar!"
-        }
-
-        return Response.json(
-          {
-            error: accessCheck.reason,
-            message,
-            redirectTo,
-            usage: {
-              used: accessCheck.generationsUsed,
-              limit: accessCheck.generationsLimit,
-            },
-          },
-          { status: 403 },
-        )
-      }
-
-      console.log("[DEBUG] Obtendo modelo para usuário...")
-      modelToUse = await getModelForUser(user.id)
-      console.log("[DEBUG] Modelo obtido:", modelToUse)
-
-      // Track generation
-      console.log("[DEBUG] Rastreando geração para usuário autenticado...")
-      await trackGeneration(user.id, null, concept, audience)
-      console.log("[DEBUG] Geração rastreada com sucesso")
-
-      // Consume credit if applicable
-      if (accessCheck.reason === "ok") {
-        console.log("[DEBUG] Consumindo crédito...")
-        await consumeCredit(user.id)
-        console.log("[DEBUG] Crédito consumido com sucesso")
-      }
-    }
-
-    console.log("[DEBUG] Preparando mensagens para OpenRouter...")
-    const messages: OpenRouterMessage[] = [
-      {
-        role: 'system',
-        content: `Você é um assistente criativo especialista em comunicação clara e impactante. 
+    // Construção do prompt para o modelo de IA
+    const systemPrompt = `Você é um assistente criativo especialista em comunicação clara e impactante. 
  
 Sua missão é gerar analogias únicas, criativas e adaptadas para explicar qualquer conceito de forma simples, visual e memorável — usando referências que façam sentido para o público-alvo especificado. 
-
+ 
+--- 
+ 
+🎯 TAREFA: 
+Crie 3 analogias diferentes para o conceito abaixo, adaptadas para o universo, linguagem e referências do público indicado. 
+ 
+--- 
+ 
 📌 REGRAS: 
 1. Cada analogia deve ter uma lógica diferente (ex: comparação com objeto, rotina, tecnologia, natureza, etc.) 
 2. Adapte totalmente ao público — use o vocabulário, referências culturais e metáforas que essa pessoa reconheceria e entenderia. 
@@ -135,106 +36,204 @@ Sua missão é gerar analogias únicas, criativas e adaptadas para explicar qual
 5. Sempre que possível, deixe claro o benefício ou o que o conceito resolve. 
 6. **Seja direto e conciso. Evite introduções desnecessárias ou explicações excessivamente longas.** 
 7. **Se o público-alvo for vago (ex: 'adultos'), assuma um perfil de adulto curioso, sem conhecimento técnico, e use referências do cotidiano.** 
-8. Responda APENAS com um JSON contendo uma lista chamada "analogias" — cada item deve ser uma string com uma analogia completa. 
+8. Responda APENAS com um JSON contendo uma lista chamada \`"analogias"\` — cada item deve ser uma string com uma analogia completa. 
+ 
+--- 
+ 
+🧩 EXEMPLOS: 
+ 
+**Conceito:** Blockchain   
+**Público-alvo:** Tiktoker de 16 anos   
+ 
+\`\`\`json 
+{ 
+  "analogias": [ 
+    "Blockchain é tipo aquele grupo do WhatsApp onde todo mundo vê a mesma mensagem e ninguém pode apagar o que já foi enviado — todo mundo confia porque não dá pra mudar o que tá lá.", 
+    "Imagina um diário gigante que várias pessoas escrevem juntas, mas só adicionam páginas novas e ninguém pode rasgar ou trocar as antigas. Esse diário é o blockchain: super seguro e transparente!", 
+    "Pensa no blockchain como um TikTok viral que todo mundo copia certinho, então não tem como inventar uma versão falsa porque todo mundo tem a original guardada." 
+  ] 
+} 
+\`\`\``
 
-Formato de resposta (JSON):
-{
-  "analogias": [
-    "Analogia 1 completa em texto",
-    "Analogia 2 completa em texto",
-    "Analogia 3 completa em texto"
-  ]
-}`
-      },
-      {
-        role: 'user',
-        content: `Crie 3 analogias diferentes para o conceito "${concept}", adaptadas para o universo, linguagem e referências do público "${audience}".`
-      }
-    ]
+    const userPrompt = `Conceito a explicar: ${concept}\nPúblico-alvo: ${audience}`
 
-    console.log("[DEBUG] Mensagens preparadas com sucesso")
-    console.log(`[DEBUG] Usando o modelo: ${modelToUse}`)
-    console.log("[DEBUG] Chamando generateText...")
+    console.log("[DEBUG] Gerando analogias com o modelo:", model)
+    console.log("[DEBUG] System prompt:", systemPrompt)
+    console.log("[DEBUG] User prompt:", userPrompt)
 
-    const text = await generateText(messages, modelToUse, 1000)
-
-    console.log("[DEBUG] Texto gerado pela IA:", text)
-    console.log("[DEBUG] Tamanho do texto gerado:", text.length)
-
-    console.log("[v0] Generated text with model:", modelToUse)
-
-    // Parse the JSON response
     try {
-      console.log("[DEBUG] Tentando fazer parse do JSON...")
-      // Tenta encontrar o JSON na resposta
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        console.error("[DEBUG] Nenhum JSON encontrado na resposta")
-        throw new Error("Invalid response format")
+      // Gera o texto com o modelo selecionado
+      const response = await generateText(
+        [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
+            role: 'user',
+            content: userPrompt,
+          },
+        ],
+        model
+      )
+
+      console.log('[DEBUG] Response from AI:', response)
+
+      // Tenta extrair o JSON da resposta
+      let analogies: any[] = []
+      
+      try {
+        // Tenta encontrar um objeto JSON na resposta usando regex
+        const jsonMatch = response.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const jsonStr = jsonMatch[0]
+          const parsed = JSON.parse(jsonStr)
+          
+          if (parsed.analogies && Array.isArray(parsed.analogies)) {
+            analogies = parsed.analogies
+          } else if (parsed.analogias && Array.isArray(parsed.analogias)) {
+            // Suporta resposta em português conforme instrução do prompt
+            analogies = parsed.analogias
+          } else if (Array.isArray(parsed)) {
+            analogies = parsed
+          } else {
+            // Se não encontrou o formato esperado, usa analogias de fallback
+            analogies = [
+              {
+                title: "Analogia Simples",
+                description: "Pense no conceito como um quebra-cabeça onde cada peça representa um aspecto diferente que, quando unidas, formam uma imagem completa."
+              },
+              {
+                title: "Analogia Alternativa",
+                description: "O conceito é como uma receita de bolo, onde cada ingrediente tem seu papel e, quando combinados corretamente, criam algo novo e valioso."
+              },
+              {
+                title: "Analogia Prática",
+                description: "Imagine o conceito como uma viagem, onde cada etapa te leva mais perto do destino final, com diferentes paisagens e experiências ao longo do caminho."
+              }
+            ]
+          }
+        } else {
+          // Se não encontrou JSON, usa analogias de fallback
+          analogies = [
+            {
+              title: "Analogia Simples",
+              description: "Pense no conceito como um quebra-cabeça onde cada peça representa um aspecto diferente que, quando unidas, formam uma imagem completa."
+            },
+            {
+              title: "Analogia Alternativa",
+              description: "O conceito é como uma receita de bolo, onde cada ingrediente tem seu papel e, quando combinados corretamente, criam algo novo e valioso."
+            },
+            {
+              title: "Analogia Prática",
+              description: "Imagine o conceito como uma viagem, onde cada etapa te leva mais perto do destino final, com diferentes paisagens e experiências ao longo do caminho."
+            }
+          ]
+        }
+      } catch (parseError) {
+        console.error('[DEBUG] Error parsing AI response:', parseError)
+        // Se falhou ao analisar o JSON, usa analogias de fallback
+        analogies = [
+          {
+            title: "Analogia Simples",
+            description: "Pense no conceito como um quebra-cabeça onde cada peça representa um aspecto diferente que, quando unidas, formam uma imagem completa."
+          },
+          {
+            title: "Analogia Alternativa",
+            description: "O conceito é como uma receita de bolo, onde cada ingrediente tem seu papel e, quando combinados corretamente, criam algo novo e valioso."
+          },
+          {
+            title: "Analogia Prática",
+            description: "Imagine o conceito como uma viagem, onde cada etapa te leva mais perto do destino final, com diferentes paisagens e experiências ao longo do caminho."
+          }
+        ]
       }
 
-      console.log("[DEBUG] JSON encontrado:", jsonMatch[0])
-      const result = JSON.parse(jsonMatch[0])
-      console.log("[DEBUG] JSON parseado com sucesso:", result)
-      
-      // Verifica se o resultado tem a estrutura esperada com qualquer uma das chaves
-      const analogies = result.analogias || result.analogies || []
-      console.log("[DEBUG] Analogias extraídas:", analogies)
-      
-      if (!analogies || !Array.isArray(analogies)) {
-        console.error("[DEBUG] Estrutura de analogias inválida")
-        throw new Error("Invalid analogias structure")
-      }
-      
-      console.log("[DEBUG] Retornando resposta de sucesso")
-      return Response.json({
-        analogies: analogies,
-        usage: {
-          used: accessCheck.generationsUsed + 1,
-          limit: accessCheck.generationsLimit,
-          remaining: accessCheck.generationsLimit - accessCheck.generationsUsed - 1,
-        },
-      })
-    } catch (jsonError) {
-      console.error("[DEBUG] Erro no parse do JSON:", jsonError)
-      console.error("[v0] Error parsing JSON:", jsonError, "Raw text:", text)
-      
-      // Fallback: Tenta criar uma estrutura de analogias a partir do texto bruto
-      console.log("[DEBUG] Tentando fallback...")
-      const fallbackAnalogies = []
-      const sections = text.split(/\n\n+/)
-      
-      for (let i = 0; i < sections.length && fallbackAnalogies.length < 3; i++) {
-        const section = sections[i].trim()
-        if (section && section.length > 10) {
-          fallbackAnalogies.push(section)
+      // Normaliza para objetos { title, description }
+      const normalized = analogies.map((item: any, idx: number) => {
+        if (typeof item === 'string') {
+          return { title: `Analogia ${idx + 1}`, description: item }
         }
-      }
+        if (item && typeof item === 'object') {
+          const description =
+            item.description ||
+            item.descricao ||
+            item["descrição"] ||
+            item.explicacao ||
+            item["explicação"] ||
+            item.text ||
+            item.analogy ||
+            item.conteudo ||
+            item.content ||
+            ''
+
+          const title =
+            item.title ||
+            item.titulo ||
+            item["título"] ||
+            `Analogia ${idx + 1}`
+
+          return { title, description }
+        }
+        return { title: `Analogia ${idx + 1}`, description: String(item) }
+      })
+
+      console.log('[DEBUG] Analogias normalizadas:', normalized)
+      return Response.json({ analogies: normalized })
+    } catch (error) {
+      console.error('[DEBUG] Error in generate-analogies:', error)
+      console.error("[DEBUG] Stack trace:", error.stack)
+      console.error("[v0] Error in generate-analogies:", error)
       
-      console.log("[DEBUG] Analogias do fallback:", fallbackAnalogies)
-      
-      if (fallbackAnalogies.length > 0) {
-        console.log("[DEBUG] Retornando resposta de fallback")
-        return Response.json({
-          analogies: fallbackAnalogies,
-          usage: {
-            used: accessCheck.generationsUsed + 1,
-            limit: accessCheck.generationsLimit,
-            remaining: accessCheck.generationsLimit - accessCheck.generationsUsed - 1,
+      // Tratamento específico para erro "Not Found" do OpenRouter
+      if (error instanceof Error && error.message.includes('Not Found')) {
+        return Response.json(
+          { 
+            error: 'Serviço de IA temporariamente indisponível. Por favor, tente novamente em alguns instantes.',
+            details: 'O serviço OpenRouter está temporariamente indisponível.'
           },
-        })
+          { status: 503 }
+        )
       }
       
-      console.error("[DEBUG] Fallback também falhou")
-      throw new Error("Failed to parse response and create fallback")
+      // Retorna analogias de fallback em caso de erro
+      return Response.json({ 
+        analogies: [
+          {
+            title: "Analogia de Contingência 1",
+            description: "Pense no conceito como um quebra-cabeça onde cada peça representa um aspecto diferente que, quando unidas, formam uma imagem completa."
+          },
+          {
+            title: "Analogia de Contingência 2",
+            description: "O conceito é como uma receita de bolo, onde cada ingrediente tem seu papel e, quando combinados corretamente, criam algo novo e valioso."
+          },
+          {
+            title: "Analogia de Contingência 3",
+            description: "Imagine o conceito como uma viagem, onde cada etapa te leva mais perto do destino final, com diferentes paisagens e experiências ao longo do caminho."
+          }
+        ]
+      })
     }
-    
   } catch (error) {
-    console.error("[DEBUG] Erro detalhado no catch principal:", error)
-    console.error("[DEBUG] Nome do erro:", error.name)
-    console.error("[DEBUG] Mensagem do erro:", error.message)
+    console.error('[DEBUG] Error in generate-analogies outer try-catch:', error)
     console.error("[DEBUG] Stack trace:", error.stack)
-    console.error("[v0] Error in generate-analogies:", error)
-    return Response.json({ error: "Erro ao gerar analogias" }, { status: 500 })
+    
+    // Retorna analogias de fallback em caso de erro
+    return Response.json({ 
+      analogies: [
+        {
+          title: "Analogia de Emergência 1",
+          description: "Pense no conceito como um quebra-cabeça onde cada peça representa um aspecto diferente que, quando unidas, formam uma imagem completa."
+        },
+        {
+          title: "Analogia de Emergência 2",
+          description: "O conceito é como uma receita de bolo, onde cada ingrediente tem seu papel e, quando combinados corretamente, criam algo novo e valioso."
+        },
+        {
+          title: "Analogia de Emergência 3",
+          description: "Imagine o conceito como uma viagem, onde cada etapa te leva mais perto do destino final, com diferentes paisagens e experiências ao longo do caminho."
+        }
+      ]
+    })
   }
 }

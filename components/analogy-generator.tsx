@@ -115,7 +115,7 @@ export function AnalogyGenerator() {
       
       toast({
         title: "Erro ao gerar analogias",
-        description: errorMessage,
+        description: data?.error || errorMessage,
         variant: "destructive",
       })
     } finally {
