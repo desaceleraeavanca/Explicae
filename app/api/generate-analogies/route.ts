@@ -6,6 +6,7 @@ import {
   consumeCredit,
   getAnonymousId,
 } from "@/lib/access-control"
+import { getModelForUser } from "@/lib/openrouter"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser()
 
     let accessCheck
+    let modelToUse = "openai/gpt-4o-mini" // Default for anonymous users
 
     if (!user) {
       const anonymousId = getAnonymousId()
@@ -82,6 +84,8 @@ export async function POST(request: Request) {
         )
       }
 
+      modelToUse = await getModelForUser(user.id)
+
       // Track generation
       await trackGeneration(user.id, null, concept, audience)
 
@@ -115,12 +119,12 @@ Formato de resposta (JSON):
 Gere exatamente 3 analogias diferentes e criativas.`
 
     const { text } = await generateText({
-      model: "openai/gpt-4o",
+      model: modelToUse,
       prompt,
       temperature: 0.9,
     })
 
-    console.log("[v0] Generated text:", text)
+    console.log("[v0] Generated text with model:", modelToUse)
 
     // Parse the JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/)

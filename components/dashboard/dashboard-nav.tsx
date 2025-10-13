@@ -1,6 +1,6 @@
 "use client"
 
-import { Lightbulb, Menu, User, LogOut, Crown } from "lucide-react"
+import { Lightbulb, Menu, User, LogOut, Crown, Shield } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,9 +12,30 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export function DashboardNav() {
   const router = useRouter()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+        if (profile?.role === "admin") {
+          setIsAdmin(true)
+        }
+      }
+    }
+
+    checkAdmin()
+  }, [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -52,6 +73,15 @@ export function DashboardNav() {
             <Link href="/dashboard/analyzer" className="text-sm font-medium hover:text-accent transition-colors">
               Analisador
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-sm font-medium hover:text-accent transition-colors flex items-center gap-1"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -72,6 +102,14 @@ export function DashboardNav() {
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/profile">Perfil</Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Painel Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild className="md:hidden">
                   <Link href="/pricing">Planos</Link>
                 </DropdownMenuItem>

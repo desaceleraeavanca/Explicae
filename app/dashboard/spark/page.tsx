@@ -13,9 +13,8 @@ export default async function DailySparkPage() {
     redirect("/auth/login")
   }
 
-  // Get today's spark
   const today = new Date().toISOString().split("T")[0]
-  const { data: todaySpark } = await supabase.from("daily_sparks").select("*").eq("spark_date", today).single()
+  const { data: todaySpark } = await supabase.from("daily_sparks").select("*").eq("spark_date", today).maybeSingle()
 
   // Get recent sparks
   const { data: recentSparks } = await supabase

@@ -98,3 +98,14 @@ export function getAnonymousId(): string {
 
   return anonymousId
 }
+
+export async function addCredits(userId: string, amount: number): Promise<boolean> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc("add_credits", {
+    user_id_param: userId,
+    credits_amount: amount,
+  })
+
+  return !error && data
+}

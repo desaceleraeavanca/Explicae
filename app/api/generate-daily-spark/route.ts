@@ -12,9 +12,12 @@ export async function POST() {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Check if today's spark already exists
     const today = new Date().toISOString().split("T")[0]
-    const { data: existingSpark } = await supabase.from("daily_sparks").select("*").eq("spark_date", today).single()
+    const { data: existingSpark } = await supabase
+      .from("daily_sparks")
+      .select("*")
+      .eq("spark_date", today)
+      .maybeSingle()
 
     if (existingSpark) {
       return Response.json({ spark: existingSpark })
@@ -83,7 +86,7 @@ Explicação detalhada da analogia (2-3 parágrafos)`,
         spark_date: today,
       })
       .select()
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error("[v0] Error saving spark:", error)
