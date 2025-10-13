@@ -72,7 +72,6 @@ export function AnalogyCreator({ audiences }: AnalogyCreatorProps) {
       })
 
       const data = await response.json()
-
       if (!response.ok) {
         if (response.status === 403 && data.error) {
           setUpgradeReason(data.error)
@@ -100,10 +99,25 @@ export function AnalogyCreator({ audiences }: AnalogyCreatorProps) {
         description: "Confira as 3 analogias criativas abaixo.",
       })
     } catch (error) {
-      console.error("[v0] Error generating analogies:", error)
+      console.error("Error generating analogies:", error)
+      
+      let errorMessage = "Tente novamente em alguns instantes."
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Not Found")) {
+          errorMessage = "Serviço temporariamente indisponível. Tente novamente."
+        } else if (error.message.includes("Rate limit")) {
+          errorMessage = "Muitas requisições. Aguarde um momento e tente novamente."
+        } else if (error.message.includes("Invalid API key")) {
+          errorMessage = "Erro de configuração. Entre em contato com o suporte."
+        } else if (error.message.includes("Network Error")) {
+          errorMessage = "Erro de conexão. Verifique sua internet e tente novamente."
+        }
+      }
+      
       toast({
         title: "Erro ao gerar analogias",
-        description: "Tente novamente em alguns instantes.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

@@ -47,8 +47,16 @@ export function OpenRouterSettings({ userId }: OpenRouterSettingsProps) {
   async function handleSave() {
     setLoading(true)
     const supabase = createClient()
-
+    
+    // Primeiro verificar se o registro já existe para obter o ID
+    const { data: existingConfig } = await supabase
+      .from("system_settings")
+      .select("id")
+      .eq("key", "openrouter_config")
+      .maybeSingle()
+    
     const { error } = await supabase.from("system_settings").upsert({
+      id: existingConfig?.id,
       key: "openrouter_config",
       value: config,
       updated_by: userId,

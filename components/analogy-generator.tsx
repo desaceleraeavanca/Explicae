@@ -49,15 +49,23 @@ export function AnalogyGenerator() {
     setShowUpgradePrompt(false)
 
     try {
+      console.log("[FRONTEND DEBUG] Iniciando requisição para /api/generate-analogies")
+      console.log("[FRONTEND DEBUG] Dados enviados:", { concept, audience })
+      
       const response = await fetch("/api/generate-analogies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ concept, audience }),
       })
 
+      console.log("[FRONTEND DEBUG] Response status:", response.status)
+      console.log("[FRONTEND DEBUG] Response ok:", response.ok)
+
       const data = await response.json()
+      console.log("[FRONTEND DEBUG] Response data:", data)
 
       if (!response.ok) {
+        console.log("[FRONTEND DEBUG] Response não ok, verificando erro...")
         if (response.status === 403 && data.error) {
           setUpgradeReason(data.error)
           setUpgradeMessage(data.message)
@@ -74,6 +82,7 @@ export function AnalogyGenerator() {
         throw new Error(data.error || "Erro ao gerar analogias")
       }
 
+      console.log("[FRONTEND DEBUG] Analogias recebidas:", data.analogies)
       setAnalogies(data.analogies)
       if (data.usage) {
         setUsage(data.usage)
@@ -84,10 +93,29 @@ export function AnalogyGenerator() {
         description: "Confira as 3 analogias criativas abaixo.",
       })
     } catch (error) {
-      console.error("[v0] Error generating analogies:", error)
+      console.error("[FRONTEND DEBUG] Error generating analogies:", error)
+      console.error("[FRONTEND DEBUG] Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      })
+      
+      let errorMessage = "Tente novamente em alguns instantes."
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Not Found")) {
+          errorMessage = "Serviço temporariamente indisponível. Tente novamente."
+        } else if (error.message.includes("Rate limit")) {
+          errorMessage = "Muitas requisições. Aguarde um momento e tente novamente."
+        } else if (error.message.includes("Invalid API key")) {
+          errorMessage = "Erro de configuração. Entre em contato com o suporte."
+        } else if (error.message.includes("Network Error")) {
+          errorMessage = "Erro de conexão. Verifique sua internet e tente novamente."
+        }
+      }
+      
       toast({
         title: "Erro ao gerar analogias",
-        description: "Tente novamente em alguns instantes.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
