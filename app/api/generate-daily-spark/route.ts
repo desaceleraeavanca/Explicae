@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { generateText } from "ai"
+import { generateText, getModelForUser } from "@/lib/openrouter"
 
 export async function POST() {
   try {
@@ -52,11 +52,17 @@ export async function POST() {
     const randomAudience = audiences[Math.floor(Math.random() * audiences.length)]
 
     // Generate analogy using AI
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: `Você é um especialista em criar analogias criativas e memoráveis.
-
-Crie UMA analogia para explicar "${randomConcept}" para "${randomAudience}".
+    const model = await getModelForUser(user.id)
+    const text = await generateText(
+      [
+        {
+          role: "system",
+          content:
+            "Você é um especialista em criar analogias criativas e memoráveis.",
+        },
+        {
+          role: "user",
+          content: `Crie UMA analogia para explicar "${randomConcept}" para "${randomAudience}".
 
 A analogia deve:
 - Ser criativa e surpreendente
@@ -68,7 +74,10 @@ Formato de resposta:
 Título da Analogia
 
 Explicação detalhada da analogia (2-3 parágrafos)`,
-    })
+        },
+      ],
+      model
+    )
 
     // Parse the response
     const lines = text.trim().split("\n\n")

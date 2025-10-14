@@ -64,26 +64,32 @@ BEGIN
     
     -- Check credits
     IF user_credits <= 0 THEN
-      RETURN QUERY SELECT FALSE, 'no_credits'::TEXT, 0, 0;
+      RETURN QUERY SELECT FALSE, 'no_credits'::TEXT, 150, 150; -- show full used when none remaining
       RETURN;
     END IF;
     
-    RETURN QUERY SELECT TRUE, 'ok'::TEXT, user_credits, user_credits;
+    -- Credit plan shows limit=150 and used=(150 - credits_remaining)
+    RETURN QUERY SELECT TRUE, 'ok'::TEXT, GREATEST(150 - user_credits, 0), 150;
     
   ELSIF user_plan IN ('mensal', 'anual', 'admin', 'cortesia', 'promo', 'parceria', 'presente') THEN
     -- Check subscription status
     IF user_status = 'cancelada' THEN
-      RETURN QUERY SELECT FALSE, 'subscription_cancelled'::TEXT, 0, 0;
+      RETURN QUERY SELECT FALSE, 'subscription_cancelled'::TEXT, monthly_gen_count, 3000;
       RETURN;
     END IF;
     
     IF user_status = 'pendente' THEN
-      RETURN QUERY SELECT FALSE, 'payment_pending'::TEXT, 0, 0;
+      RETURN QUERY SELECT FALSE, 'payment_pending'::TEXT, monthly_gen_count, 3000;
       RETURN;
     END IF;
     
-    -- Fair use policy: unlimited but tracked
-    RETURN QUERY SELECT TRUE, 'ok'::TEXT, monthly_gen_count, 0;
+    -- Fair use policy: hard cap at 3000 per current month
+    IF monthly_gen_count >= 3000 THEN
+      RETURN QUERY SELECT FALSE, 'fair_use_limit'::TEXT, monthly_gen_count, 3000;
+      RETURN;
+    END IF;
+
+    RETURN QUERY SELECT TRUE, 'ok'::TEXT, monthly_gen_count, 3000;
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

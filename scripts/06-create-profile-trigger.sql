@@ -2,12 +2,13 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Create profile
-  INSERT INTO public.profiles (id, email, full_name)
+  -- Create profile with 100 initial credits for free users
+  INSERT INTO public.profiles (id, email, full_name, credits_remaining)
   VALUES (
     NEW.id,
     NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', '')
+    COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+    100  -- Inicializa com 100 créditos para todos os usuários
   );
   
   -- Create user stats

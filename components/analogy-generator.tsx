@@ -61,25 +61,46 @@ export function AnalogyGenerator() {
       console.log("[FRONTEND DEBUG] Response status:", response.status)
       console.log("[FRONTEND DEBUG] Response ok:", response.ok)
 
-      const data = await response.json()
-      console.log("[FRONTEND DEBUG] Response data:", data)
+      let data
+      try {
+        data = await response.json()
+        console.log("[FRONTEND DEBUG] Response data:", data)
+      } catch (jsonError) {
+        console.error("[FRONTEND DEBUG] Erro ao processar JSON da resposta:", jsonError)
+        toast({
+          title: "Erro de comunicação",
+          description: "Não foi possível processar a resposta do servidor. Tente novamente.",
+          variant: "destructive",
+        })
+        return
+      }
 
       if (!response.ok) {
         console.log("[FRONTEND DEBUG] Response não ok, verificando erro...")
-        if (response.status === 403 && data.error) {
+        if (response.status === 403 && data?.error) {
           setUpgradeReason(data.error)
-          setUpgradeMessage(data.message)
-          setUsage(data.usage)
+          setUpgradeMessage(data.message || "")
+          setUsage(data.usage || null)
           setShowUpgradePrompt(true)
 
           toast({
             title: "Limite atingido",
-            description: data.message,
+            description: data.message || "Você atingiu o limite de uso.",
             variant: "destructive",
           })
           return
         }
-        throw new Error(data.error || "Erro ao gerar analogias")
+        throw new Error(data?.error || "Erro ao gerar analogias")
+      }
+
+      if (!data?.analogies || !Array.isArray(data.analogies)) {
+        console.error("[FRONTEND DEBUG] Dados inválidos recebidos:", data)
+        toast({
+          title: "Erro de formato",
+          description: "O servidor retornou dados em formato inválido. Tente novamente.",
+          variant: "destructive",
+        })
+        return
       }
 
       console.log("[FRONTEND DEBUG] Analogias recebidas:", data.analogies)
@@ -115,7 +136,7 @@ export function AnalogyGenerator() {
       
       toast({
         title: "Erro ao gerar analogias",
-        description: data?.error || errorMessage,
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
-import { createOpenAI } from "@ai-sdk/openai"
-import { getOpenRouterApiKey } from "@/lib/openrouter"
+import { generateText, getOpenRouterApiKey, getOpenRouterConfig } from "@/lib/openrouter"
 
 export async function GET() {
   console.log("[DEBUG-ENDPOINT] Endpoint de debug acessado")
@@ -23,22 +21,16 @@ export async function GET() {
       }, { status: 500 })
     }
     
-    // Teste 3: Criar cliente OpenRouter
-    console.log("[DEBUG-ENDPOINT] Criando cliente OpenRouter...")
-    const openrouter = createOpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: openRouterApiKey,
-    })
-    console.log("[DEBUG-ENDPOINT] Cliente OpenRouter criado")
+    // Teste 3: Obter modelo da configuração
+    console.log("[DEBUG-ENDPOINT] Obtendo configuração do OpenRouter...")
+    const config = await getOpenRouterConfig()
+    console.log("[DEBUG-ENDPOINT] Modelo padrão:", config.default_model)
     
-    // Teste 4: Fazer uma chamada simples
+    // Teste 4: Fazer uma chamada simples usando nossa biblioteca
     console.log("[DEBUG-ENDPOINT] Fazendo chamada de teste...")
-    const { text } = await generateText({
-      model: openrouter("openai/gpt-4o-mini"),
-      prompt: "Responda apenas com: OK",
-      temperature: 0.1,
-      maxTokens: 10,
-    })
+    const text = await generateText([
+      { role: 'user', content: 'Responda apenas com: OK' }
+    ], config.default_model, 10)
     
     console.log("[DEBUG-ENDPOINT] Resposta recebida:", text)
     

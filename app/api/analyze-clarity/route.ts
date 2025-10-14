@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import { generateText } from "ai"
+import { generateText } from "@/lib/openrouter"
+import { getModelForUser } from "@/lib/openrouter"
 
 export async function POST(request: Request) {
   try {
@@ -20,14 +21,20 @@ export async function POST(request: Request) {
 
     const audienceContext = targetAudience ? `\nPúblico-alvo: ${targetAudience}` : ""
 
-    const { text: analysisText } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt: `Você é um especialista em comunicação clara e criação de analogias.
+    const model = await getModelForUser(user.id)
 
-Analise o seguinte texto e identifique onde analogias podem melhorar a clareza:${audienceContext}
+    const analysisText = await generateText(
+      [
+        {
+          role: "system",
+          content:
+            "Você é um especialista em comunicação clara e criação de analogias.",
+        },
+        {
+          role: "user",
+          content: `Analise o seguinte texto e identifique onde analogias podem melhorar a clareza:${audienceContext}
 
-TEXTO:
-${text}
+TEXTO:\n${text}
 
 Forneça sua análise no seguinte formato JSON:
 {
@@ -48,7 +55,10 @@ Forneça sua análise no seguinte formato JSON:
 Identifique 2-5 trechos complexos que se beneficiariam de analogias.
 Seja específico nas sugestões de analogias.
 Considere o público-alvo ao fazer recomendações.`,
-    })
+        },
+      ],
+      model
+    )
 
     // Parse the JSON response
     const jsonMatch = analysisText.match(/\{[\s\S]*\}/)

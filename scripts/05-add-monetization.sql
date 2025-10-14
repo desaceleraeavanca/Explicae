@@ -2,7 +2,7 @@
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_type TEXT DEFAULT 'gratuito' CHECK (plan_type IN ('gratuito', 'credito', 'mensal', 'anual', 'admin', 'cortesia', 'promo', 'parceria', 'presente'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'ativa' CHECK (subscription_status IN ('ativa', 'pendente', 'cancelada'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS credits_remaining INTEGER DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS credits_remaining INTEGER DEFAULT 100;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kiwify_customer_id TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ;
 
@@ -103,12 +103,25 @@ CREATE OR REPLACE FUNCTION consume_credit(user_id_param UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
   user_plan TEXT;
+  current_credits INT;
 BEGIN
-  SELECT plan_type INTO user_plan
+  SELECT plan_type, credits_remaining INTO user_plan, current_credits
   FROM public.profiles
   WHERE id = user_id_param;
 
-  IF user_plan = 'credito' THEN
+  -- Inicializa créditos para planos gratuitos se for NULL
+  IF user_plan = 'gratuito' AND current_credits IS NULL THEN
+    UPDATE public.profiles
+    SET credits_remaining = 99
+    WHERE id = user_id_param;
+    RETURN TRUE;
+  -- Atualiza os créditos para planos gratuitos
+  ELSIF user_plan = 'gratuito' THEN
+    UPDATE public.profiles
+    SET credits_remaining = GREATEST(COALESCE(credits_remaining, 99) - 1, 0)
+    WHERE id = user_id_param;
+    RETURN TRUE;
+  ELSIF user_plan = 'credito' THEN
     UPDATE public.profiles
     SET credits_remaining = GREATEST(credits_remaining - 1, 0)
     WHERE id = user_id_param;

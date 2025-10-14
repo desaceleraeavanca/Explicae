@@ -119,6 +119,8 @@ export function AnalogyBank({ initialAnalogies }: AnalogyBankProps) {
     if (!confirm("Tem certeza que deseja excluir esta analogia?")) return
 
     const supabase = createClient()
+    
+    // Excluir a analogia sem afetar o contador total
     const { error } = await supabase.from("analogies").delete().eq("id", analogy.id)
 
     if (error) {

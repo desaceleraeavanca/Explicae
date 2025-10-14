@@ -24,6 +24,7 @@ export default async function DashboardPage() {
       id: user.id,
       email: user.email || "",
       full_name: user.user_metadata?.full_name || "",
+      credits_remaining: 100, // Inicializa com 100 créditos para plano gratuito
     })
 
     // Create user stats as well
@@ -37,19 +38,37 @@ export default async function DashboardPage() {
 
   const { data: stats } = await supabase.from("user_stats").select("*").eq("user_id", user.id).maybeSingle()
 
+  // Garantir que o contador de analogias criadas seja exibido corretamente
+  // mesmo quando o usuário apaga todas as analogias
+  const userStats = stats || { 
+    total_analogies: 0, 
+    total_favorites: 0, 
+    current_streak: 0, 
+    longest_streak: 0 
+  }
+
   // Fetch user badges count
   const { count: badgesCount } = await supabase
     .from("user_badges")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
 
-  // Fetch recent analogies
-  const { data: recentAnalogies } = await supabase
+  // Fetch recent analogies - garantindo que não há duplicatas por conceito
+  const { data: allAnalogies } = await supabase
     .from("analogies")
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
-    .limit(5)
+    
+  // Filtrar analogias para evitar conceitos duplicados
+  const uniqueConceptsMap = new Map()
+  const recentAnalogies = allAnalogies?.filter(analogy => {
+    if (!uniqueConceptsMap.has(analogy.concept)) {
+      uniqueConceptsMap.set(analogy.concept, true)
+      return true
+    }
+    return false
+  }).slice(0, 5) || []
 
   const accessInfo = await checkUserAccess(user.id)
 
@@ -68,7 +87,7 @@ export default async function DashboardPage() {
         <div className="grid gap-6 lg:grid-cols-3 mb-8">
           <div className="lg:col-span-2">
             <DashboardStats
-              stats={stats || { total_analogies: 0, total_favorites: 0, current_streak: 0, longest_streak: 0 }}
+              stats={userStats}
               badgesCount={badgesCount || 0}
             />
           </div>
