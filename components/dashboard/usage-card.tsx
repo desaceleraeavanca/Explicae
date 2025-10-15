@@ -70,7 +70,7 @@ export function UsageCard({
               <div className="flex justify-between text-sm">
                 <span>Gerações utilizadas:</span>
                 <span className="font-semibold">
-                  {generationsUsed || 0} / {generationsLimit || 100}
+                  {Math.min(generationsUsed || 0, generationsLimit || 100)} / {generationsLimit || 100}
                 </span>
               </div>
               <Progress value={((generationsUsed || 0) / (generationsLimit || 100)) * 100} />

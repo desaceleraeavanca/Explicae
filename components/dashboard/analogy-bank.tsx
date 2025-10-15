@@ -1,24 +1,19 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, Star, Copy, Trash2, MoreVertical, Tag } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Analogy } from "@/lib/types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "@/components/ui/use-toast"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Copy, Search, Star, Tag, Trash2 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { Send, Twitter, Facebook, Linkedin, MessageCircle } from "lucide-react"
 
 interface Analogy {
   id: string
@@ -41,6 +36,7 @@ export function AnalogyBank({ initialAnalogies }: AnalogyBankProps) {
   const [filterFavorites, setFilterFavorites] = useState(false)
   const [editingAnalogy, setEditingAnalogy] = useState<Analogy | null>(null)
   const [newCategory, setNewCategory] = useState("")
+  const [sharingAnalogy, setSharingAnalogy] = useState<Analogy | null>(null) // Novo estado para o diálogo de compartilhamento
   const { toast } = useToast()
 
   const categories = useMemo(() => {
@@ -115,13 +111,17 @@ export function AnalogyBank({ initialAnalogies }: AnalogyBankProps) {
     })
   }
 
-  const deleteAnalogy = async (analogy: Analogy) => {
+  const shareAnalogy = (analogy: Analogy) => {
+    setSharingAnalogy(analogy) // Abre o diálogo de compartilhamento
+  }
+
+  const deleteAnalogy = async (analogyId: string) => {
     if (!confirm("Tem certeza que deseja excluir esta analogia?")) return
 
     const supabase = createClient()
-    
+
     // Excluir a analogia sem afetar o contador total
-    const { error } = await supabase.from("analogies").delete().eq("id", analogy.id)
+    const { error } = await supabase.from("analogies").delete().eq("id", analogyId)
 
     if (error) {
       toast({
@@ -132,7 +132,7 @@ export function AnalogyBank({ initialAnalogies }: AnalogyBankProps) {
       return
     }
 
-    setAnalogies((prev) => prev.filter((a) => a.id !== analogy.id))
+    setAnalogies((prev) => prev.filter((a) => a.id !== analogyId))
     toast({
       title: "Excluído",
       description: "Analogia removida do banco.",
@@ -243,36 +243,54 @@ export function AnalogyBank({ initialAnalogies }: AnalogyBankProps) {
                       )}
                     </div>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => toggleFavorite(analogy)}>
-                        <Star className="mr-2 h-4 w-4" />
-                        {analogy.is_favorite ? "Remover favorito" : "Adicionar favorito"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setEditingAnalogy(analogy)
-                          setNewCategory(analogy.category || "")
-                        }}
-                      >
-                        <Tag className="mr-2 h-4 w-4" />
-                        Editar categoria
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => copyAnalogy(analogy)}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Copiar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => deleteAnalogy(analogy)} className="text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleFavorite(analogy)}
+                      title={analogy.is_favorite ? "Remover favorito" : "Favoritar"}
+                    >
+                      <Star className={`h-4 w-4 ${analogy.is_favorite ? "fill-current text-yellow-500" : ""}`} />
+                      <span className="sr-only">{analogy.is_favorite ? "Remover favorito" : "Favoritar"}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingAnalogy(analogy)}
+                      title="Editar categoria"
+                    >
+                      <Tag className="h-4 w-4" />
+                      <span className="sr-only">Editar categoria</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => copyAnalogy(analogy)}
+                      title="Copiar"
+                    >
+                      <Copy className="h-4 w-4" />
+                      <span className="sr-only">Copiar</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => shareAnalogy(analogy)}
+                      title="Compartilhar"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span className="sr-only">Compartilhar</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteAnalogy(analogy.id)}
+                      title="Excluir"
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -308,6 +326,62 @@ export function AnalogyBank({ initialAnalogies }: AnalogyBankProps) {
               Cancelar
             </Button>
             <Button onClick={updateCategory}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Novo Diálogo de Compartilhamento */}
+      <Dialog open={!!sharingAnalogy} onOpenChange={(open) => !open && setSharingAnalogy(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Compartilhar Analogia</DialogTitle>
+            <DialogDescription>Escolha onde você quer compartilhar esta analogia incrível!</DialogDescription>
+          </DialogHeader>
+          <div className='grid gap-4 py-4'>
+            <Button
+              onClick={() => shareOnSocialMedia('twitter', sharingAnalogy?.content || '')}
+              className='w-full bg-[#1DA1F2] hover:bg-[#1DA1F2]/90 text-white'
+            >
+              <Twitter className='mr-2 h-4 w-4' /> Compartilhar no Twitter
+            </Button>
+            <Button
+              onClick={() => shareOnSocialMedia('facebook', sharingAnalogy?.content || '')}
+              className='w-full bg-[#1877F2] hover:bg-[#1877F2]/90 text-white'
+            >
+              <Facebook className='mr-2 h-4 w-4' /> Compartilhar no Facebook
+            </Button>
+            <Button
+              onClick={() => shareOnSocialMedia('linkedin', sharingAnalogy?.content || '')}
+              className='w-full bg-[#0A66C2] hover:bg-[#0A66C2]/90 text-white'
+            >
+              <Linkedin className='mr-2 h-4 w-4' /> Compartilhar no LinkedIn
+            </Button>
+            <Button
+              onClick={() => shareOnSocialMedia('whatsapp', sharingAnalogy?.content || '')}
+              className='w-full bg-[#25D366] hover:bg-[#25D366]/90 text-white'
+            >
+              <MessageCircle className='mr-2 h-4 w-4' /> Compartilhar no WhatsApp
+            </Button>
+            <Button
+              onClick={() => {
+                if (sharingAnalogy?.content) {
+                  navigator.clipboard.writeText(sharingAnalogy.content)
+                  toast({
+                    title: 'Copiado!',
+                    description: 'A analogia foi copiada para a área de transferência.',
+                  })
+                }
+                setSharingAnalogy(null)
+              }}
+              className='w-full'
+            >
+              Copiar para área de transferência
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button type='button' variant='secondary' onClick={() => setSharingAnalogy(null)}>
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

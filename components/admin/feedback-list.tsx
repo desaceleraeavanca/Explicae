@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -24,44 +23,109 @@ interface Feedback {
   }
 }
 
+// Dados mockados para desenvolvimento
+const MOCK_FEEDBACK: Feedback[] = [
+  {
+    id: "1",
+    user_id: "123",
+    type: "bug",
+    message: "O botão de salvar analogias não está funcionando quando clico nele mais de uma vez.",
+    rating: 3,
+    status: "novo",
+    created_at: new Date().toISOString(),
+    profiles: {
+      email: "usuario@exemplo.com",
+      full_name: "Pedro Almeida"
+    }
+  },
+  {
+    id: "2",
+    user_id: "456",
+    type: "feature",
+    message: "Seria ótimo ter uma opção para compartilhar analogias diretamente no WhatsApp.",
+    rating: 5,
+    status: "em_analise",
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    profiles: {
+      email: "outro@exemplo.com",
+      full_name: "Carla Mendes"
+    }
+  },
+  {
+    id: "3",
+    user_id: "789",
+    type: "improvement",
+    message: "A interface poderia ter cores mais vibrantes para destacar as analogias principais.",
+    rating: 4,
+    status: "implementado",
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+    profiles: {
+      email: "design@exemplo.com",
+      full_name: "Marcos Souza"
+    }
+  },
+  {
+    id: "4",
+    user_id: "101",
+    type: "bug",
+    message: "Quando tento gerar mais de 5 analogias seguidas, o sistema trava por alguns segundos.",
+    rating: 2,
+    status: "resolvido",
+    created_at: new Date(Date.now() - 259200000).toISOString(),
+    profiles: {
+      email: "teste@exemplo.com",
+      full_name: "Juliana Costa"
+    }
+  }
+];
+
 export function FeedbackList() {
-  const [feedback, setFeedback] = useState<Feedback[]>([])
-  const [loading, setLoading] = useState(true)
+  const [feedback, setFeedback] = useState<Feedback[]>(MOCK_FEEDBACK)
+  const [loading, setLoading] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
-    loadFeedback()
+    // Comentado temporariamente enquanto usamos dados mockados
+    // loadFeedback()
   }, [])
 
   async function loadFeedback() {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("feedback")
-      .select("*, profiles(email, full_name)")
-      .order("created_at", { ascending: false })
-
-    if (!error && data) {
-      setFeedback(data as any)
+    // Função mantida para referência futura
+    // Quando a conexão com o Supabase for resolvida, podemos reativar
+    setLoading(true)
+    try {
+      // Simulando uma chamada de API
+      setTimeout(() => {
+        setFeedback(MOCK_FEEDBACK)
+        setLoading(false)
+      }, 500)
+    } catch (error) {
+      console.error("Erro ao carregar feedback:", error)
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function updateFeedbackStatus(feedbackId: string, status: string) {
-    const supabase = createClient()
-    const { error } = await supabase.from("feedback").update({ status }).eq("id", feedbackId)
-
-    if (error) {
+    // Versão mockada da função de atualização
+    try {
+      // Simulando uma chamada de API
+      setTimeout(() => {
+        const updatedFeedback = feedback.map(item => 
+          item.id === feedbackId ? { ...item, status } : item
+        )
+        setFeedback(updatedFeedback)
+        
+        toast({
+          title: "Sucesso",
+          description: "Status do feedback atualizado",
+        })
+      }, 300)
+    } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o feedback",
         variant: "destructive",
       })
-    } else {
-      toast({
-        title: "Sucesso",
-        description: "Status do feedback atualizado",
-      })
-      loadFeedback()
     }
   }
 

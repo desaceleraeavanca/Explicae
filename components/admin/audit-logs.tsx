@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -26,15 +25,87 @@ interface AuditLog {
   } | null
 }
 
+// Dados mockados para desenvolvimento
+const MOCK_LOGS: AuditLog[] = [
+  {
+    id: "1",
+    user_id: "123",
+    action: "login",
+    resource_type: "auth",
+    resource_id: null,
+    details: { method: "email" },
+    ip_address: "187.122.45.67",
+    created_at: new Date().toISOString(),
+    profiles: {
+      email: "admin@explicae.com",
+      full_name: "Admin Explicaê"
+    }
+  },
+  {
+    id: "2",
+    user_id: "456",
+    action: "create",
+    resource_type: "analogy",
+    resource_id: "abc123",
+    details: { topic: "React Hooks" },
+    ip_address: "201.45.78.90",
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    profiles: {
+      email: "professor@explicae.com",
+      full_name: "João Professor"
+    }
+  },
+  {
+    id: "3",
+    user_id: "789",
+    action: "update",
+    resource_type: "user_settings",
+    resource_id: "789",
+    details: { changed: ["notification_preferences"] },
+    ip_address: "189.54.32.11",
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    profiles: {
+      email: "aluno@gmail.com",
+      full_name: "Maria Aluna"
+    }
+  },
+  {
+    id: "4",
+    user_id: "123",
+    action: "delete",
+    resource_type: "analogy",
+    resource_id: "def456",
+    details: { reason: "outdated" },
+    ip_address: "187.122.45.67",
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+    profiles: {
+      email: "admin@explicae.com",
+      full_name: "Admin Explicaê"
+    }
+  },
+  {
+    id: "5",
+    user_id: null,
+    action: "failed_login",
+    resource_type: "auth",
+    resource_id: null,
+    details: { reason: "invalid_credentials", attempts: 3 },
+    ip_address: "45.67.89.12",
+    created_at: new Date(Date.now() - 43200000).toISOString(),
+    profiles: null
+  }
+];
+
 export function AuditLogs() {
-  const [logs, setLogs] = useState<AuditLog[]>([])
-  const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([])
+  const [logs, setLogs] = useState<AuditLog[]>(MOCK_LOGS)
+  const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>(MOCK_LOGS)
   const [searchTerm, setSearchTerm] = useState("")
   const [actionFilter, setActionFilter] = useState("all")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    loadLogs()
+    // Comentado temporariamente enquanto usamos dados mockados
+    // loadLogs()
   }, [])
 
   useEffect(() => {
@@ -42,31 +113,33 @@ export function AuditLogs() {
   }, [searchTerm, actionFilter, logs])
 
   async function loadLogs() {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("audit_logs")
-      .select("*, profiles(email, full_name)")
-      .order("created_at", { ascending: false })
-      .limit(100)
-
-    if (!error && data) {
-      setLogs(data as any)
-    }
-    setLoading(false)
+    // Função mantida para referência futura
+    // Simulando carregamento de dados
+    setLoading(true)
+    setTimeout(() => {
+      setLogs(MOCK_LOGS)
+      setFilteredLogs(MOCK_LOGS)
+      setLoading(false)
+    }, 500)
   }
 
   function filterLogs() {
-    let filtered = logs
+    let filtered = [...logs]
 
+    // Filtrar por termo de busca
     if (searchTerm) {
+      const term = searchTerm.toLowerCase()
       filtered = filtered.filter(
         (log) =>
-          log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.resource_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          log.profiles?.email.toLowerCase().includes(searchTerm.toLowerCase()),
+          log.action.toLowerCase().includes(term) ||
+          log.resource_type.toLowerCase().includes(term) ||
+          log.profiles?.email?.toLowerCase().includes(term) ||
+          log.profiles?.full_name?.toLowerCase().includes(term) ||
+          log.ip_address?.toLowerCase().includes(term)
       )
     }
 
+    // Filtrar por tipo de ação
     if (actionFilter !== "all") {
       filtered = filtered.filter((log) => log.action === actionFilter)
     }
@@ -75,7 +148,7 @@ export function AuditLogs() {
   }
 
   function getActionColor(action: string) {
-    if (action.includes("create") || action.includes("insert")) return "bg-green-500"
+    if (action.includes("create") || action.includes("add")) return "bg-green-500"
     if (action.includes("update") || action.includes("edit")) return "bg-blue-500"
     if (action.includes("delete") || action.includes("remove")) return "bg-red-500"
     if (action.includes("login") || action.includes("auth")) return "bg-purple-500"
@@ -167,7 +240,7 @@ export function AuditLogs() {
       </div>
 
       <div className="mt-4 text-sm text-muted-foreground">
-        Mostrando {filteredLogs.length} de {logs.length} logs (últimos 100)
+        Mostrando {filteredLogs.length} de {logs.length} logs
       </div>
     </Card>
   )

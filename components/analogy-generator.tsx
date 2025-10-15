@@ -16,12 +16,6 @@ interface Analogy {
   description: string
 }
 
-interface UsageInfo {
-  used: number
-  limit: number
-  remaining: number
-}
-
 export function AnalogyGenerator() {
   const [concept, setConcept] = useState("")
   const [audience, setAudience] = useState("")
@@ -30,7 +24,6 @@ export function AnalogyGenerator() {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState("")
   const [upgradeMessage, setUpgradeMessage] = useState("")
-  const [usage, setUsage] = useState<UsageInfo | null>(null)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -46,7 +39,6 @@ export function AnalogyGenerator() {
 
     setIsLoading(true)
     setAnalogies([])
-    setShowUpgradePrompt(false)
 
     try {
       console.log("[FRONTEND DEBUG] Iniciando requisição para /api/generate-analogies")
@@ -80,12 +72,11 @@ export function AnalogyGenerator() {
         if (response.status === 403 && data?.error) {
           setUpgradeReason(data.error)
           setUpgradeMessage(data.message || "")
-          setUsage(data.usage || null)
           setShowUpgradePrompt(true)
 
           toast({
-            title: "Limite atingido",
-            description: data.message || "Você atingiu o limite de uso.",
+            title: "Crie uma conta grátis",
+            description: "Para continuar gerando analogias, crie sua conta gratuita.",
             variant: "destructive",
           })
           return
@@ -105,9 +96,6 @@ export function AnalogyGenerator() {
 
       console.log("[FRONTEND DEBUG] Analogias recebidas:", data.analogies)
       setAnalogies(data.analogies)
-      if (data.usage) {
-        setUsage(data.usage)
-      }
 
       toast({
         title: "Analogias geradas! 🎉",
@@ -173,15 +161,13 @@ export function AnalogyGenerator() {
 
   return (
     <div className="space-y-8">
-      {showUpgradePrompt && (
-        <UpgradePrompt reason={upgradeReason} message={upgradeMessage} usage={usage || undefined} />
-      )}
-
-      {usage && !showUpgradePrompt && (
+      {showUpgradePrompt ? (
+        <UpgradePrompt reason={upgradeReason} message={upgradeMessage} />
+      ) : (
         <Card className="p-4 bg-muted/50">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              Gerações restantes: <span className="font-semibold text-foreground">{usage.remaining}</span>
+              Crie uma conta e ganhe <span className="font-semibold text-foreground">100 gerações grátis</span>
             </span>
             <Button variant="link" size="sm" onClick={() => router.push("/auth/signup")} className="h-auto p-0">
               Criar conta grátis

@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
   // Refresh session if needed by getting user (which refreshes if token expired)
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user && !request.nextUrl.pathname.startsWith('/auth/login') && !request.nextUrl.pathname.startsWith('/auth/signup')) {
+  if (!user && request.nextUrl.pathname !== '/' && !request.nextUrl.pathname.startsWith('/auth/login') && !request.nextUrl.pathname.startsWith('/auth/signup')) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)

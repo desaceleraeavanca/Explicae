@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Obtém o ID anônimo do usuário a partir dos cookies
@@ -6,13 +7,14 @@ import { cookies } from "next/headers";
  */
 export function getAnonymousId(): string {
   const cookieStore = cookies();
-  const anonymousId = cookieStore.get("anonymous_id")?.value;
+  let anonymousId = cookieStore.get("anonymous_id")?.value;
   
-  if (anonymousId) {
-    return anonymousId;
+  if (!anonymousId) {
+    // Gera um novo ID se não houver
+    anonymousId = uuidv4();
+    // Salva no cookie por 30 dias
+    cookieStore.set("anonymous_id", anonymousId, { maxAge: 60 * 60 * 24 * 30 });
   }
   
-  // Se não houver ID anônimo, retorna uma string vazia
-  // O ID será gerado no cliente se necessário
-  return "";
+  return anonymousId;
 }

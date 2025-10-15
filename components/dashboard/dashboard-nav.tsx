@@ -67,11 +67,11 @@ export function DashboardNav() {
             <Link href="/dashboard/badges" className="text-sm font-medium hover:text-accent transition-colors">
               Conquistas
             </Link>
-            <Link href="/dashboard/spark" className="text-sm font-medium hover:text-accent transition-colors">
-              Faísca Diária
-            </Link>
             <Link href="/dashboard/analyzer" className="text-sm font-medium hover:text-accent transition-colors">
               Analisador
+            </Link>
+            <Link href="/dashboard/support" className="text-sm font-medium hover:text-accent transition-colors">
+              Suporte
             </Link>
             {isAdmin && (
               <Link
@@ -139,9 +139,6 @@ export function DashboardNav() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/badges">Conquistas</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/spark">Faísca Diária</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/analyzer">Analisador</Link>

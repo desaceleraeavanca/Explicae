@@ -37,11 +37,6 @@ export function QuickActions({ recentAnalogies }: QuickActionsProps) {
               Ver Todas as Analogias
             </Button>
           </Link>
-          <Link href="/dashboard/spark">
-            <Button size="lg" variant="outline">
-              Faísca Diária
-            </Button>
-          </Link>
         </CardContent>
       </Card>
 

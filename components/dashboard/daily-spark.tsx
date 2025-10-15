@@ -1,10 +1,8 @@
-"use client"
+'use client'
 
-import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles, Copy, RefreshCw, Calendar } from "lucide-react"
+import { Sparkles, Copy, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface Spark {
@@ -20,39 +18,8 @@ interface DailySparkProps {
   recentSparks: Spark[]
 }
 
-export function DailySpark({ todaySpark: initialSpark, recentSparks }: DailySparkProps) {
-  const [todaySpark, setTodaySpark] = useState<Spark | null>(initialSpark)
-  const [isGenerating, setIsGenerating] = useState(false)
+export function DailySpark({ todaySpark, recentSparks }: DailySparkProps) {
   const { toast } = useToast()
-
-  const generateTodaySpark = async () => {
-    setIsGenerating(true)
-
-    try {
-      const response = await fetch("/api/generate-daily-spark", {
-        method: "POST",
-      })
-
-      if (!response.ok) throw new Error("Erro ao gerar faísca")
-
-      const data = await response.json()
-      setTodaySpark(data.spark)
-
-      toast({
-        title: "Faísca gerada",
-        description: "A faísca criativa de hoje foi gerada com sucesso.",
-      })
-    } catch (error) {
-      console.error("[v0] Error generating spark:", error)
-      toast({
-        title: "Erro ao gerar faísca",
-        description: "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGenerating(false)
-    }
-  }
 
   const copySpark = (spark: Spark) => {
     navigator.clipboard.writeText(spark.analogy_text)
@@ -81,21 +48,6 @@ export function DailySpark({ todaySpark: initialSpark, recentSparks }: DailySpar
                 })}
               </CardDescription>
             </div>
-            {!todaySpark && (
-              <Button onClick={generateTodaySpark} disabled={isGenerating}>
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Gerar Faísca
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -127,20 +79,7 @@ export function DailySpark({ todaySpark: initialSpark, recentSparks }: DailySpar
           ) : (
             <div className="py-12 text-center">
               <Sparkles className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground mb-4">A faísca de hoje ainda não foi gerada.</p>
-              <Button onClick={generateTodaySpark} disabled={isGenerating}>
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Gerar Faísca de Hoje
-                  </>
-                )}
-              </Button>
+              <p className="text-muted-foreground mb-4">Nenhuma faísca disponível hoje. Volte amanhã para uma nova analogia!</p>
             </div>
           )}
         </CardContent>

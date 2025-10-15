@@ -10,7 +10,7 @@ RETURNS TABLE(
 ) AS $$
 DECLARE
   gen_count INTEGER;
-  limit_val INTEGER := 9; -- 3 uses x 3 analogies each
+  limit_val INTEGER := 3; -- 3 uses x 3 analogies each
 BEGIN
   -- Count generations for provided anonymous id
   SELECT COUNT(*) INTO gen_count

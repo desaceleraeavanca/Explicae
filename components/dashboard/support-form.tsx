@@ -23,7 +23,7 @@ export function SupportForm({ userId }: SupportFormProps) {
   const [ticketData, setTicketData] = useState({
     subject: "",
     message: "",
-    priority: "media",
+    priority: "normal",
   })
   const [feedbackData, setFeedbackData] = useState({
     type: "feature",
@@ -53,7 +53,7 @@ export function SupportForm({ userId }: SupportFormProps) {
         title: "Sucesso",
         description: "Ticket enviado com sucesso! Entraremos em contato em breve.",
       })
-      setTicketData({ subject: "", message: "", priority: "media" })
+      setTicketData({ subject: "", message: "", priority: "normal" })
     }
 
     setLoading(false)
@@ -64,7 +64,7 @@ export function SupportForm({ userId }: SupportFormProps) {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.from("feedback").insert({
+    const { error } = await supabase.from("user_feedback").insert({
       user_id: userId,
       ...feedbackData,
     })
@@ -123,7 +123,7 @@ export function SupportForm({ userId }: SupportFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="baixa">Baixa</SelectItem>
-                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="normal">Média</SelectItem>
                   <SelectItem value="alta">Alta</SelectItem>
                   <SelectItem value="urgente">Urgente</SelectItem>
                 </SelectContent>
