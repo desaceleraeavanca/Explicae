@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-// Removido import do DashboardNav pois j· est· no layout.tsx
+// Removido import do DashboardNav pois j√° est√° no layout.tsx
 import { BadgesDisplay } from "@/components/dashboard/badges-display"
 
 export default async function BadgesPage() {
@@ -41,17 +41,17 @@ export default async function BadgesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* DashboardNav removido pois j· est· no layout.tsx */}
+      {/* DashboardNav removido pois j√° est√° no layout.tsx */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Conquistas</h1>
           <p className="text-muted-foreground">Acompanhe seu progresso e desbloqueie badges</p>
         </div>
 
-        <BadgesDisplay
-          allBadges={allBadges || []}
-          userBadges={userBadges || []}
-          stats={stats || { total_analogies: 0, total_favorites: 0, current_streak: 0, longest_streak: 0 }}
+        <BadgesDisplay 
+          allBadges={allBadges || []} 
+          userBadges={userBadges || []} 
+          stats={stats} 
           categorizedCount={categorizedCount || 0}
           audienceCount={audienceCount || 0}
         />

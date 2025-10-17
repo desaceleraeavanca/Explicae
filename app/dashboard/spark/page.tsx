@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-// Removido import do DashboardNav pois j· est· no layout.tsx
+// Removido import do DashboardNav pois j√° est√° no layout.tsx
 import { DailySpark } from "@/components/dashboard/daily-spark"
 
 export default async function DailySparkPage() {
@@ -25,7 +25,7 @@ export default async function DailySparkPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* DashboardNav removido pois j· est· no layout.tsx */}
+      {/* DashboardNav removido pois j√° est√° no layout.tsx */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Fa√≠sca Criativa Di√°ria</h1>
