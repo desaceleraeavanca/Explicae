@@ -167,7 +167,7 @@ export function AnalogyGenerator() {
         <Card className="p-4 bg-muted/50">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              Crie uma conta e ganhe <span className="font-semibold text-foreground">100 gerações grátis</span>
+              Crie uma conta e ganhe <span className="font-semibold text-foreground">100 analogias grátis</span>
             </span>
             <Button variant="link" size="sm" onClick={() => router.push("/auth/signup")} className="h-auto p-0">
               Criar conta grátis

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardNav } from "@/components/dashboard/dashboard-nav"
+// Removido import do DashboardNav pois já está no layout.tsx
 import { ProfileForm } from "@/components/dashboard/profile-form"
 
 export default async function ProfilePage() {
@@ -21,7 +21,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav />
+      {/* DashboardNav removido pois já está no layout.tsx */}
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Meu Perfil</h1>

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardNav } from "@/components/dashboard/dashboard-nav"
+// Removido import do DashboardNav pois já está no layout.tsx
 import { BadgesDisplay } from "@/components/dashboard/badges-display"
 
 export default async function BadgesPage() {
@@ -41,7 +41,7 @@ export default async function BadgesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav />
+      {/* DashboardNav removido pois já está no layout.tsx */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Conquistas</h1>

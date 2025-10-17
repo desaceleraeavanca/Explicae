@@ -45,7 +45,7 @@ export function UsageCard({
       <CardContent className="space-y-4">
         {isUnlimited && (
           <div className="text-center py-4">
-            <p className="text-2xl font-bold text-primary">Gerações Ilimitadas</p>
+            <p className="text-2xl font-bold text-primary">Analogias Ilimitadas</p>
             <p className="text-sm text-muted-foreground mt-1">Crie quantas analogias quiser!</p>
           </div>
         )}
@@ -53,12 +53,12 @@ export function UsageCard({
         {isCredits && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Créditos restantes:</span>
+              <span>Faíscas restantes:</span>
               <span className="font-semibold">{creditsRemaining || 0}</span>
             </div>
             {creditsRemaining !== undefined && creditsRemaining < 20 && (
               <Button asChild className="w-full" size="sm">
-                <Link href="/pricing">Recarregar Créditos</Link>
+                <Link href="/pricing">Recarregar Faíscas</Link>
               </Button>
             )}
           </div>
@@ -68,12 +68,12 @@ export function UsageCard({
           <div className="space-y-3">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Gerações utilizadas:</span>
+                <span>Faíscas utilizadas:</span>
                 <span className="font-semibold">
-                  {Math.min(generationsUsed || 0, generationsLimit || 100)} / {generationsLimit || 100}
+                  {generationsUsed || 0} / 100
                 </span>
               </div>
-              <Progress value={((generationsUsed || 0) / (generationsLimit || 100)) * 100} />
+              <Progress value={Math.min(((generationsUsed || 0) / 100) * 100, 100)} />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">

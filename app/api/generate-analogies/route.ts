@@ -234,19 +234,30 @@ Crie 3 analogias diferentes para o conceito abaixo, adaptadas para o universo, l
             
             // Atualiza o uso do usuário
             try {
-              // Incrementa o uso do usuário
+              // Incrementa o uso do usuário e a contagem de analogias
               const { error: usageError } = await supabaseTrack.rpc('increment_user_usage', {
                 p_user_id: trackUser.id
               })
-              
               if (usageError) {
                 console.error('[DEBUG] Erro ao incrementar uso do usuário:', usageError)
-                
-                // Recalcula o uso final
-                if (usageInfo) {
-                  usageInfo.used += 1
-                  usageInfo.remaining = Math.max(0, usageInfo.limit - usageInfo.used)
-                }
+              }
+
+              const { error: countError } = await supabaseTrack.rpc('increment_analogy_count', {
+                p_user_id: trackUser.id
+              })
+              if (countError) {
+                console.error('[DEBUG] Erro ao incrementar contagem de analogias:', countError)
+              }
+
+              // Consumir crédito explicitamente (1 faísca por analogia gerada)
+              const { error: creditError } = await supabaseTrack.rpc('consume_credit', {
+                user_id_param: trackUser.id
+              })
+              
+              if (creditError) {
+                console.error('[DEBUG] Erro ao consumir crédito:', creditError)
+              } else {
+                console.log('[DEBUG] Crédito consumido com sucesso para o usuário:', trackUser.id)
               }
             } catch (usageUpdateError) {
               console.error('[DEBUG] Erro ao atualizar uso:', usageUpdateError)

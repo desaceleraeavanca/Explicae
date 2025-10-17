@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
-import { DashboardNav } from "@/components/dashboard/dashboard-nav"
+// Removido import do DashboardNav pois já está no layout.tsx
 import { QuickActions } from "@/components/dashboard/quick-actions"
 import { UsageCard } from "@/components/dashboard/usage-card"
 import { PlanBadge } from "@/components/dashboard/plan-badge"
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav />
+      {/* DashboardNav removido pois já está no layout.tsx */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 flex items-start justify-between">
           <div>

@@ -7,7 +7,7 @@ AND plan_type = 'gratuito';
 
 -- Inicializa os créditos para usuários do plano credito que estão com valor 0 ou NULL
 UPDATE public.profiles
-SET credits_remaining = 150
+SET credits_remaining = 300
 WHERE (credits_remaining IS NULL OR credits_remaining = 0)
 AND plan_type = 'credito';
 

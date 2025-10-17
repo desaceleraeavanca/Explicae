@@ -12,7 +12,7 @@ export function PlanBadge({ planType, subscriptionStatus }: PlanBadgeProps) {
       case "gratuito":
         return { label: "Descoberta", icon: Sparkles, variant: "secondary" as const }
       case "credito":
-        return { label: "Faísca", icon: Zap, variant: "default" as const }
+        return { label: "Pacote de Faíscas", icon: Zap, variant: "default" as const }
       case "mensal":
         return { label: "Clareza", icon: Crown, variant: "default" as const }
       case "anual":

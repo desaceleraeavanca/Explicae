@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardNav } from "@/components/dashboard/dashboard-nav"
+// Removido import do DashboardNav pois já está no layout.tsx
 import { AnalogyCreator } from "@/components/dashboard/analogy-creator"
 
 export default async function CreateAnalogyPage() {
@@ -25,7 +25,7 @@ export default async function CreateAnalogyPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav />
+      {/* DashboardNav removido pois já está no layout.tsx */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">

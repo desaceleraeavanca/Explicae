@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { SupportForm } from "@/components/dashboard/support-form"
+import { UserTicketsList } from "@/components/dashboard/user-tickets-list"
 
 export default async function SupportPage() {
   const supabase = await createClient()
@@ -18,6 +19,8 @@ export default async function SupportPage() {
       <p className="text-muted-foreground mb-8">Entre em contato conosco para ajuda ou envie feedback</p>
 
       <SupportForm userId={user.id} />
+
+      <UserTicketsList userId={user.id} />
     </div>
   )
 }

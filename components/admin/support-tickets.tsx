@@ -4,10 +4,14 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MessageSquare, Clock, CheckCircle2, XCircle } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
+import { MessageSquare, Clock, CheckCircle2, XCircle, FileText, User, SlidersHorizontal, Ticket as TicketIcon, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
+import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
 
 interface Ticket {
   id: string
@@ -23,204 +27,124 @@ interface Ticket {
   }
 }
 
-// Dados mockados para desenvolvimento
-const MOCK_TICKETS: Ticket[] = [
-  {
-    id: "1",
-    user_id: "123",
-    subject: "Problema com analogias",
-    message: "Não consigo gerar analogias sobre programação. O sistema fica carregando infinitamente.",
-    status: "pendente",
-    priority: "normal",
-    created_at: new Date().toISOString(),
-    profiles: {
-      email: "usuario@exemplo.com",
-      full_name: "Maria Silva"
-    }
-  },
-  {
-    id: "2",
-    user_id: "456",
-    subject: "Dúvida sobre planos",
-    message: "Qual plano é melhor para uso educacional? Preciso para uma turma de 30 alunos.",
-    status: "aberto",
-    priority: "alta",
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    profiles: {
-      email: "outro@exemplo.com",
-      full_name: "João Santos"
-    }
-  },
-  {
-    id: "3",
-    user_id: "789",
-    subject: "Erro ao salvar analogias",
-    message: "Quando tento salvar minhas analogias favoritas, recebo um erro de 'operação não permitida'.",
-    status: "em_andamento",
-    priority: "baixa",
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    profiles: {
-      email: "dev@exemplo.com",
-      full_name: "Carlos Ferreira"
-    }
-  },
-  {
-    id: "4",
-    user_id: "101",
-    subject: "Sugestão de melhoria",
-    message: "Seria ótimo ter uma opção para exportar as analogias em formato PDF para uso em sala de aula.",
-    status: "resolvido",
-    priority: "normal",
-    created_at: new Date(Date.now() - 259200000).toISOString(),
-    profiles: {
-      email: "prof@exemplo.com",
-      full_name: "Ana Oliveira"
-    }
-  }
-];
-
 export function SupportTickets() {
-  const [tickets, setTickets] = useState<Ticket[]>(MOCK_TICKETS)
-  const [loading, setLoading] = useState(false)
+  const [tickets, setTickets] = useState<Ticket[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
-    // Comentado temporariamente enquanto usamos dados mockados
-    // loadTickets()
+    loadTickets()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loadTickets() {
     try {
-      setError(null);
-      setLoading(true);
-      
-      // Dados de exemplo para garantir que algo seja exibido
-      const dadosExemplo = [
-        {
-          id: "1",
-          user_id: "123",
-          subject: "Problema com analogias",
-          message: "Não consigo gerar analogias sobre programação",
-          status: "pendente",
-          priority: "normal",
-          created_at: new Date().toISOString(),
-          profiles: {
-            email: "usuario@exemplo.com",
-            full_name: "Usuário Exemplo"
-          }
-        },
-        {
-          id: "2",
-          user_id: "456",
-          subject: "Dúvida sobre planos",
-          message: "Qual plano é melhor para meu caso?",
-          status: "aberto",
-          priority: "alta",
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          profiles: {
-            email: "outro@exemplo.com",
-            full_name: "Outro Usuário"
-          }
-        }
-      ];
-      
-      try {
-        // Tentar carregar da API primeiro
-        const response = await fetch('/api/admin/tickets');
-        
-        if (!response.ok) {
-          throw new Error('Erro ao carregar da API');
-        }
-        
-        const data = await response.json();
-        console.log("Tickets carregados da API:", data.tickets);
-        setTickets(data.tickets || []);
-      } catch (apiError) {
-        console.error("Erro ao carregar da API, usando dados de exemplo:", apiError);
-        // Se falhar, usar dados de exemplo
-        setTickets(dadosExemplo);
-        toast({
-          title: "Aviso",
-          description: "Usando dados de exemplo devido a problemas de conexão",
-          variant: "default",
-        });
+      setError(null)
+      setLoading(true)
+
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("support_tickets")
+        .select(
+          `
+          id,
+          subject,
+          message,
+          status,
+          priority,
+          created_at,
+          profiles (
+            email,
+            full_name
+          )
+        `
+        )
+        .order("created_at", { ascending: false })
+
+      if (error) {
+        throw new Error(
+          "Falha ao carregar os tickets de suporte. Verifique as permissões RLS."
+        )
       }
+
+      setTickets(data || [])
     } catch (err: any) {
-      console.error("Erro geral:", err);
-      setError(err.message || "Falha na conexão com o servidor. Verifique sua conexão com a internet.");
+      console.error("Erro detalhado:", err)
+      setError(err.message || "Ocorreu um erro desconhecido.")
       toast({
-        title: "Erro",
-        description: `Erro ao carregar tickets: ${err.message || "Erro desconhecido"}`,
+        title: "Erro ao carregar tickets",
+        description: err.message,
         variant: "destructive",
-      });
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   async function updateTicketStatus(ticketId: string, status: string) {
     try {
-      const response = await fetch('/api/admin/tickets/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ticketId, status }),
-      });
+      const supabase = createClient()
+      const { error } = await supabase
+        .from("support_tickets")
+        .update({ status })
+        .eq("id", ticketId)
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao atualizar ticket');
+      if (error) {
+        throw new Error("Falha ao atualizar o status do ticket. Verifique as permissões RLS.")
       }
 
       toast({
-        title: "Sucesso",
-        description: "Status do ticket atualizado",
-      });
-      
-      loadTickets();
+        title: "Sucesso!",
+        description: "O status do ticket foi atualizado.",
+      })
+
+      // Recarrega a lista para refletir a mudança
+      loadTickets()
     } catch (err: any) {
-      console.error("Erro ao atualizar ticket:", err);
+      console.error("Erro ao atualizar ticket:", err)
       toast({
-        title: "Erro",
-        description: `Não foi possível atualizar o ticket: ${err.message || "Erro desconhecido"}`,
+        title: "Erro ao atualizar",
+        description: err.message || "Não foi possível atualizar o status do ticket.",
         variant: "destructive",
-      });
+      })
     }
   }
 
-  function getStatusIcon(status: string) {
-    switch (status) {
-      case "pendente":
-        return <Clock className="h-4 w-4" />
-      case "aberto":
-        return <Clock className="h-4 w-4" />
-      case "em_andamento":
-        return <MessageSquare className="h-4 w-4" />
-      case "resolvido":
-        return <CheckCircle2 className="h-4 w-4" />
-      case "fechado":
-        return <XCircle className="h-4 w-4" />
-      default:
-        return <Clock className="h-4 w-4" />
+  async function deleteTicket(ticketId: string) {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from("support_tickets")
+        .delete()
+        .eq("id", ticketId)
+
+      if (error) {
+        throw new Error("Falha ao excluir o ticket. Verifique as permissões RLS.")
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: "O ticket foi excluído permanentemente.",
+      })
+
+      loadTickets()
+    } catch (err: any) {
+      console.error("Erro ao excluir ticket:", err)
+      toast({
+        title: "Erro ao excluir",
+        description: err.message || "Não foi possível excluir o ticket.",
+        variant: "destructive",
+      })
     }
   }
 
-  function getPriorityColor(priority: string) {
-    switch (priority) {
-      case "urgente":
-        return "bg-red-500"
-      case "alta":
-        return "bg-orange-500"
-      case "normal":
-        return "bg-yellow-500"
-      case "baixa":
-        return "bg-green-500"
-      default:
-        return "bg-gray-500"
-    }
+  const statusConfig: { [key: string]: { label: string; color: string } } = {
+    pendente: { label: "Pendente", color: "bg-yellow-500" },
+    aberto: { label: "Aberto", color: "bg-yellow-500" },
+    em_andamento: { label: "Em Andamento", color: "bg-blue-500" },
+    resolvido: { label: "Resolvido", color: "bg-green-500" },
+    fechado: { label: "Fechado", color: "bg-red-500" },
   }
 
   if (loading) {
@@ -234,7 +158,7 @@ export function SupportTickets() {
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
           <p className="font-medium">Erro ao carregar tickets</p>
           <p className="text-sm mt-1">{error}</p>
-          <button 
+          <button
             onClick={() => {setLoading(true); loadTickets()}}
             className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-md text-sm"
           >
@@ -248,49 +172,114 @@ export function SupportTickets() {
   return (
     <Card className="p-6">
       <h2 className="text-xl font-bold mb-4">Tickets de Suporte</h2>
-      <div className="space-y-4">
-        {tickets.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">Nenhum ticket de suporte ainda</p>
-        ) : (
-          tickets.map((ticket) => (
-            <div key={ticket.id} className="p-4 border rounded-lg space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority}</Badge>
-                    <Badge variant="outline" className="gap-1">
-                      {getStatusIcon(ticket.status)}
-                      {ticket.status}
-                    </Badge>
+      {tickets.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <TicketIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">Nenhum ticket encontrado</h3>
+          <p className="mt-2 text-sm text-muted-foreground">Ainda não há tickets de suporte para revisar.</p>
+        </div>
+      ) : (
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <div className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    Usuário
                   </div>
-                  <h3 className="font-semibold">{ticket.subject}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{ticket.message}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {ticket.profiles?.full_name || ticket.profiles?.email} •{" "}
-                    {formatDistanceToNow(new Date(ticket.created_at), {
-                      addSuffix: true,
-                      locale: ptBR,
-                    })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Select value={ticket.status} onValueChange={(value) => updateTicketStatus(ticket.id, value)}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="resolvido">Resolvido</SelectItem>
-                    <SelectItem value="fechado">Fechado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Assunto
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center">
+                    <TicketIcon className="mr-2 h-4 w-4" />
+                    Status
+                  </div>
+                </TableHead>
+                <TableHead>
+                  <div className="flex items-center">
+                    <Clock className="mr-2 h-4 w-4" />
+                    Data
+                  </div>
+                </TableHead>
+                <TableHead className="text-right">
+                  <div className="flex items-center justify-end">
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Ações
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tickets.map((ticket) => {
+                const statusInfo = statusConfig[ticket.status] || statusConfig.pendente
+                return (
+                  <TableRow key={ticket.id}>
+                    <TableCell className="font-medium">
+                      {ticket.profiles?.full_name || ticket.profiles?.email}
+                    </TableCell>
+                    <TableCell>{ticket.subject}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="flex items-center w-fit">
+                        <span className={`mr-2 h-2 w-2 rounded-full ${statusInfo.color}`}></span>
+                        {statusInfo.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {formatDistanceToNow(new Date(ticket.created_at), {
+                        addSuffix: true,
+                        locale: ptBR,
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right flex items-center justify-end space-x-2">
+                      <Select value={ticket.status} onValueChange={(value) => updateTicketStatus(ticket.id, value)}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                          <SelectItem value="resolvido">Resolvido</SelectItem>
+                          <SelectItem value="fechado">Fechado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Você tem certeza?</DialogTitle>
+                            <DialogDescription>
+                              Essa ação não pode ser desfeita. Isso excluirá permanentemente
+                              o ticket e removerá os dados de nossos servidores.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <DialogClose asChild>
+                              <Button variant="ghost">Cancelar</Button>
+                            </DialogClose>
+                            <Button variant="destructive" onClick={() => deleteTicket(ticket.id)}>
+                              Excluir
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </Card>
   )
 }

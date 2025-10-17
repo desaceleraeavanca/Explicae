@@ -54,7 +54,7 @@ export function ProfileForm({ profile, userEmail }: ProfileFormProps) {
       case "gratuito":
         return "Descoberta (Gratuito)"
       case "credito":
-        return "Faísca (Créditos)"
+        return "Pacote de Faíscas"
       case "mensal":
         return "Clareza (Mensal)"
       case "anual":
@@ -138,7 +138,7 @@ export function ProfileForm({ profile, userEmail }: ProfileFormProps) {
 
           {profile.credits_remaining !== null && (
             <div>
-              <Label className="text-muted-foreground">Créditos Restantes</Label>
+              <Label className="text-muted-foreground">Faíscas Restantes</Label>
               <p className="text-lg font-semibold">{profile.credits_remaining} analogias</p>
             </div>
           )}

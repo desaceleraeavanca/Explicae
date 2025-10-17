@@ -63,13 +63,12 @@ BEGIN
     END IF;
     
     -- Check credits
-    IF user_credits <= 0 THEN
-      RETURN QUERY SELECT FALSE, 'no_credits'::TEXT, 150, 150; -- show full used when none remaining
-      RETURN;
-    END IF;
-    
-    -- Credit plan shows limit=150 and used=(150 - credits_remaining)
-    RETURN QUERY SELECT TRUE, 'ok'::TEXT, GREATEST(150 - user_credits, 0), 150;
+      IF user_credits <= 0 THEN
+        RETURN QUERY SELECT FALSE, 'no_credits'::TEXT, 300, 300; -- show full used when none remaining
+      END IF;
+      
+      -- Credit plan shows limit=300 and used=(300 - credits_remaining)
+      RETURN QUERY SELECT TRUE, 'ok'::TEXT, GREATEST(300 - user_credits, 0), 300;
     
   ELSIF user_plan IN ('mensal', 'anual', 'admin', 'cortesia', 'promo', 'parceria', 'presente') THEN
     -- Check subscription status

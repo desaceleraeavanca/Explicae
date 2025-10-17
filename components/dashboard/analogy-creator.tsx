@@ -163,9 +163,6 @@ export function AnalogyCreator({ audiences = [] }: AnalogyCreatorProps) {
       return
     }
 
-    // Update user stats
-    await supabase.rpc("increment_analogy_count", { user_id_param: user.id })
-
     toast({
       title: "Analogia salva",
       description: "A analogia foi adicionada ao seu banco.",

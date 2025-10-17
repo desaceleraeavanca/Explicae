@@ -126,7 +126,7 @@ export function OpenRouterSettings({ userId }: OpenRouterSettingsProps) {
             placeholder="google/gemini-2.5-flash-lite"
           />
           <p className="text-sm text-muted-foreground">
-            Modelo usado para gerações normais (ex: google/gemini-2.5-flash-lite, openai/gpt-4o-mini, anthropic/claude-3.5-sonnet)
+            Modelo usado para analogias normais (ex: google/gemini-2.5-flash-lite, openai/gpt-4o-mini, anthropic/claude-3.5-sonnet)
           </p>
         </div>
 
@@ -143,7 +143,7 @@ export function OpenRouterSettings({ userId }: OpenRouterSettingsProps) {
         </div>
 
         <div className="space-y-2">
-          <Label>Limite de Uso Justo (gerações/mês)</Label>
+          <Label>Limite de Uso Justo (analogias/mês)</Label>
           <Input
             type="number"
             value={config.fair_use_limit}

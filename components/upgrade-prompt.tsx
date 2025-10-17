@@ -28,7 +28,7 @@ export function UpgradePrompt({ reason, message, usage }: UpgradePromptProps) {
         <CardContent>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Gerações utilizadas:</span>
+              <span>Analogias utilizadas:</span>
               <span className="font-semibold">
                 {usage.used} / {usage.limit}
               </span>

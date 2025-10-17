@@ -4,9 +4,9 @@ UPDATE public.profiles
 SET credits_remaining = 100
 WHERE plan_type = 'gratuito';
 
--- Atualiza os créditos para usuários do plano crédito
+-- Atualiza créditos para planos de crédito
 UPDATE public.profiles
-SET credits_remaining = 150
+SET credits_remaining = 300
 WHERE plan_type = 'credito';
 
 -- Atualiza especificamente o usuário pereiraadiilson@gmail.com

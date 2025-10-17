@@ -51,15 +51,24 @@ export async function checkUserAccess(userId: string): Promise<AccessCheck> {
   // Verificar plano do usuário
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('plan, plan_limit')
+    .select('plan_type, credits_remaining')
     .eq('id', userId)
     .single()
 
   // Valores padrão
-  let generationsUsed = stats?.monthly_analogies || 0
-  let generationsLimit = profile?.plan_limit || 100
+  let generationsUsed = 0
+  let generationsLimit = 100  // Limite padrão para planos gratuitos
   let hasCredits = false
   let creditsExpired = false
+
+  // Para planos gratuitos, usamos o contador de analogias mensais
+  if (profile?.plan_type === 'gratuito') {
+    generationsUsed = stats?.monthly_analogies || 0
+  } else if (profile?.plan_type === 'credito') {
+    // Para planos de crédito, também mostramos quantas analogias foram criadas
+    generationsUsed = stats?.total_analogies || 0
+    generationsLimit = profile?.credits_remaining || 0
+  }
 
   // Verificar créditos
   if (credits && !creditsError) {
@@ -71,6 +80,9 @@ export async function checkUserAccess(userId: string): Promise<AccessCheck> {
       const now = new Date()
       creditsExpired = expiryDate < now
     }
+  } else if (profile?.credits_remaining) {
+    // Se não encontrou na tabela user_credits, usa o valor da tabela profiles
+    hasCredits = profile.credits_remaining > 0
   }
 
   // Determinar se o usuário pode gerar
