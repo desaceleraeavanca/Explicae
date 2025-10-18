@@ -48,6 +48,9 @@ export function OpenRouterSettings({ userId }: OpenRouterSettingsProps) {
     setLoading(true)
     const supabase = createClient()
     
+    // Log para debug
+    console.log("[ADMIN-SAVE] Salvando configuração:", JSON.stringify(config, null, 2))
+    
     // Primeiro verificar se o registro já existe para obter o ID
     const { data: existingConfig } = await supabase
       .from("system_settings")
@@ -55,13 +58,23 @@ export function OpenRouterSettings({ userId }: OpenRouterSettingsProps) {
       .eq("key", "openrouter_config")
       .maybeSingle()
     
-    const { error } = await supabase.from("system_settings").upsert({
+    // Forçar timestamp único para evitar cache
+    const timestamp = new Date().toISOString()
+    console.log("[ADMIN-SAVE] Timestamp:", timestamp)
+    
+    // Adicionar timestamp à configuração para forçar atualização
+    const configWithTimestamp = {
+      ...config,
+      _last_updated: timestamp
+    }
+    
+    const { error, data } = await supabase.from("system_settings").upsert({
       id: existingConfig?.id,
       key: "openrouter_config",
-      value: config,
+      value: configWithTimestamp,
       updated_by: userId,
-      updated_at: new Date().toISOString(),
-    })
+      updated_at: timestamp,
+    }, { returning: 'minimal' })
 
     if (error) {
       toast({

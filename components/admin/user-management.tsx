@@ -7,10 +7,14 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Shield, CreditCard } from "lucide-react"
+import { Search, Shield, CreditCard, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { UserDetailsDialog } from "./user-details-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface User {
   id: string
@@ -93,6 +97,87 @@ export function UserManagement() {
     return colors[status] || "bg-gray-500"
   }
 
+  const { toast } = useToast()
+  const [fixEmail, setFixEmail] = useState("")
+  const [fixCredits, setFixCredits] = useState("")
+  const [fixExpiry, setFixExpiry] = useState("")
+  const [fixLoading, setFixLoading] = useState(false)
+  const [overwriteExpiry, setOverwriteExpiry] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
+  async function alignCredits() {
+    if (!fixEmail) {
+      toast({ title: "Informe o email", description: "Digite o email do usuário para alinhar.", variant: "destructive" })
+      return
+    }
+    const proceed = confirm("Isso irá alinhar créditos e, opcionalmente, validade. Continuar?")
+    if (!proceed) return
+    setFixLoading(true)
+    try {
+      const body: any = { email: fixEmail.trim(), overwrite_expiry: overwriteExpiry }
+      if (fixCredits) {
+        const num = Number(fixCredits)
+        if (!Number.isFinite(num) || num < 0) {
+          throw new Error("Créditos inválidos")
+        }
+        body.credits_remaining = num
+      }
+      if (fixExpiry) {
+        const d = new Date(fixExpiry)
+        if (isNaN(d.getTime())) {
+          throw new Error("Data de validade inválida")
+        }
+        body.expiry_date = d.toISOString()
+      }
+      const res = await fetch("/api/admin/fix-user-credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Falha ao alinhar créditos")
+      }
+      toast({ title: "Créditos alinhados", description: `Usuário: ${data.profile.email}` })
+      setFixEmail("")
+      setFixCredits("")
+      setFixExpiry("")
+      setOverwriteExpiry(false)
+      await loadUsers()
+    } catch (err) {
+      toast({ title: "Erro", description: err instanceof Error ? err.message : "Falha inesperada", variant: "destructive" })
+    } finally {
+      setFixLoading(false)
+    }
+  }
+
+  function openDeleteDialog(user: User) {
+    setUserToDelete(user)
+    setDeleteOpen(true)
+  }
+
+  async function confirmDelete() {
+    if (!userToDelete) return
+    try {
+      const res = await fetch("/api/admin/users/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: userToDelete.id }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Falha ao excluir usuário")
+      }
+      toast({ title: "Usuário excluído", description: userToDelete.email })
+      setDeleteOpen(false)
+      setUserToDelete(null)
+      await loadUsers()
+    } catch (err) {
+      toast({ title: "Erro", description: err instanceof Error ? err.message : "Falha inesperada", variant: "destructive" })
+    }
+  }
+
   if (loading) {
     return <div>Carregando...</div>
   }
@@ -134,6 +219,31 @@ export function UserManagement() {
               <SelectItem value="cancelada">Cancelada</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Bloco de alinhamento de créditos por email */}
+        <div className="grid gap-4 md:grid-cols-4 mb-6">
+          <div className="md:col-span-2">
+            <Label htmlFor="fixEmail">Email do usuário</Label>
+            <Input id="fixEmail" placeholder="usuario@email.com" value={fixEmail} onChange={(e) => setFixEmail(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="fixCredits">Créditos (opcional)</Label>
+            <Input id="fixCredits" type="number" placeholder="ex: 300" value={fixCredits} onChange={(e) => setFixCredits(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="fixExpiry">Validade (opcional)</Label>
+            <Input id="fixExpiry" type="date" value={fixExpiry} onChange={(e) => setFixExpiry(e.target.value)} />
+          </div>
+          <div className="md:col-span-4 flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={overwriteExpiry} onChange={(e) => setOverwriteExpiry(e.target.checked)} />
+              Sobrescrever validade existente
+            </label>
+            <Button onClick={alignCredits} disabled={fixLoading}>
+              {fixLoading ? "Alinhando..." : "Alinhar créditos"}
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-md border">
@@ -186,7 +296,12 @@ export function UserManagement() {
                     })}
                   </TableCell>
                   <TableCell className="text-right">
-                    <UserDetailsDialog user={user} onUpdate={loadUsers} />
+                    <div className="flex justify-end gap-2">
+                      <UserDetailsDialog user={user} onUpdate={loadUsers} />
+                      <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(user)}>
+                        <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -198,6 +313,21 @@ export function UserManagement() {
           Mostrando {filteredUsers.length} de {users.length} usuários
         </div>
       </Card>
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir usuário</DialogTitle>
+            <DialogDescription>
+              Esta ação é permanente e remove o usuário e seus dados associados. Deseja continuar?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

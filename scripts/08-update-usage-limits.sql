@@ -43,20 +43,20 @@ BEGIN
   IF user_plan = 'gratuito' THEN
     -- Check trial period (7 days)
     IF trial_end IS NOT NULL AND NOW() > trial_end THEN
-      RETURN QUERY SELECT FALSE, 'trial_expired'::TEXT, gen_count, 100;
+      RETURN QUERY SELECT FALSE, 'trial_expired'::TEXT, gen_count, 30;
       RETURN;
     END IF;
     
-    -- Check generation limit (100)
-    IF gen_count >= 100 THEN
-      RETURN QUERY SELECT FALSE, 'limit_reached'::TEXT, gen_count, 100;
+    -- Check generation limit (free plan)
+    IF gen_count >= 30 THEN
+      RETURN QUERY SELECT FALSE, 'limit_reached'::TEXT, gen_count, 30;
       RETURN;
     END IF;
     
-    RETURN QUERY SELECT TRUE, 'ok'::TEXT, gen_count, 100;
+    RETURN QUERY SELECT TRUE, 'ok'::TEXT, gen_count, 30;
     
   ELSIF user_plan = 'credito' THEN
-    -- Check if credits expired (30 days)
+    -- Check if credits expired (12 months)
     IF credits_expiry IS NOT NULL AND NOW() > credits_expiry THEN
       RETURN QUERY SELECT FALSE, 'credits_expired'::TEXT, 0, 0;
       RETURN;
@@ -93,21 +93,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to add credits with expiration
+-- Function to add credits with expiration (12 months)
 CREATE OR REPLACE FUNCTION add_credits(
   user_id_param UUID,
   credits_amount INTEGER
 )
 RETURNS BOOLEAN AS $$
 BEGIN
+  -- Atualiza o perfil do usuário
   UPDATE public.profiles
   SET 
-    credits_remaining = credits_remaining + credits_amount,
-    credits_expires_at = NOW() + INTERVAL '30 days',
+    credits_remaining = COALESCE(credits_remaining, 0) + credits_amount,
+    credits_expires_at = NOW() + INTERVAL '1 year',
     plan_type = 'credito',
     subscription_status = 'ativa',
     updated_at = NOW()
   WHERE id = user_id_param;
+  
+  -- Sincroniza também na tabela user_credits (cria/atualiza)
+  INSERT INTO public.user_credits (user_id, credits_remaining, expiry_date, created_at, updated_at)
+  VALUES (user_id_param, credits_amount, NOW() + INTERVAL '1 year', NOW(), NOW())
+  ON CONFLICT (user_id) DO UPDATE
+    SET credits_remaining = public.user_credits.credits_remaining + EXCLUDED.credits_remaining,
+        expiry_date = EXCLUDED.expiry_date,
+        updated_at = NOW();
   
   RETURN TRUE;
 END;

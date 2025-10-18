@@ -30,9 +30,9 @@ SELECT
   id as user_id,
   COALESCE(credits_remaining, 
     CASE 
-      WHEN plan_type = 'gratuito' THEN 100
+      WHEN plan_type = 'gratuito' THEN 30
       WHEN plan_type = 'credito' THEN 300
-      ELSE 100
+      ELSE 30
     END
   ) as credits_remaining
 FROM 
@@ -44,7 +44,7 @@ WHERE
 
 -- Atualiza os registros em user_credits para usuários com plano gratuito que têm 0 faíscas
 UPDATE public.user_credits uc
-SET credits_remaining = 100
+SET credits_remaining = 30
 FROM public.profiles p
 WHERE 
   uc.user_id = p.id

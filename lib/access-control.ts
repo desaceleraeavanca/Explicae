@@ -9,15 +9,7 @@ export interface AccessCheck {
 }
 
 // Função mantida apenas para compatibilidade com código existente
-export async function checkAnonymousAccess(anonymousId: string): Promise<AccessCheck> {
-  // Retorna valores padrão que permitem geração
-  return {
-    canGenerate: true,
-    reason: 'ok',
-    generationsUsed: 0,
-    generationsLimit: 100,
-  }
-}
+// removed: checkAnonymousAccess — fluxo anônimo descontinuado após remoção de anonymous_id
 
 export async function checkUserAccess(userId: string): Promise<AccessCheck> {
   const supabase = await createClient()
@@ -42,67 +34,109 @@ export async function checkUserAccess(userId: string): Promise<AccessCheck> {
     .single()
 
   // Verificar uso mensal (fair use)
-  const { data: stats, error: statsError } = await supabase
+  const { data: stats } = await supabase
     .from('user_stats')
     .select('monthly_analogies, total_analogies')
     .eq('user_id', userId)
     .single()
 
-  // Verificar plano do usuário
-  const { data: profile, error: profileError } = await supabase
+  // Verificar plano do usuário (inclui trial e status)
+  const { data: profile } = await supabase
     .from('profiles')
-    .select('plan_type, credits_remaining')
+    .select('plan_type, credits_remaining, trial_ends_at, subscription_status, credits_expires_at')
     .eq('id', userId)
     .single()
 
+  // Contar gerações do usuário (para limitar 30 durante o trial)
+  const { count: genCount } = await supabase
+    .from('generations')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
   // Valores padrão
   let generationsUsed = 0
-  let generationsLimit = 100  // Limite padrão para planos gratuitos
+  let generationsLimit = 30  // Limite padrão para planos gratuitos
   let hasCredits = false
   let creditsExpired = false
 
-  // Para planos gratuitos, usamos o contador de analogias mensais
-  if (profile?.plan_type === 'gratuito') {
-    generationsUsed = stats?.monthly_analogies || 0
-  } else if (profile?.plan_type === 'credito') {
-    // Para planos de crédito, também mostramos quantas analogias foram criadas
-    generationsUsed = stats?.total_analogies || 0
-    generationsLimit = profile?.credits_remaining || 0
-  }
+  const now = new Date()
+  const planType = profile?.plan_type ?? 'gratuito'
+  const subscriptionStatus = profile?.subscription_status ?? 'ativa'
 
-  // Verificar créditos
-  if (credits && !creditsError) {
-    hasCredits = credits.credits_remaining > 0
-    
-    // Verificar se os créditos expiraram
-    if (credits.expiry_date) {
-      const expiryDate = new Date(credits.expiry_date)
-      const now = new Date()
+  // Remover duplicatas: usar variáveis já declaradas acima
+  if (planType === 'gratuito') {
+    generationsUsed = genCount || 0
+    generationsLimit = 30
+  } else if (planType === 'credito') {
+    const creditsRemaining = (credits && !creditsError)
+      ? credits.credits_remaining
+      : (profile?.credits_remaining ?? 0)
+    const expiryDate = (credits && !creditsError && credits.expiry_date)
+      ? new Date(credits.expiry_date)
+      : (profile?.credits_expires_at ? new Date(profile.credits_expires_at) : null)
+
+    if (expiryDate) {
       creditsExpired = expiryDate < now
     }
-  } else if (profile?.credits_remaining) {
-    // Se não encontrou na tabela user_credits, usa o valor da tabela profiles
-    hasCredits = profile.credits_remaining > 0
+    generationsLimit = 300
+    generationsUsed = Math.max(0, 300 - (creditsRemaining || 0))
+    hasCredits = (creditsRemaining || 0) > 0
+  } else if (["mensal", "anual", "admin", "cortesia", "promo", "parceria", "presente"].includes(planType)) {
+    // Uso mensal para controle interno (fair use), sem bloqueio
+    generationsUsed = stats?.monthly_analogies || 0
+    generationsLimit = 3000
   }
 
   // Determinar se o usuário pode gerar
   let canGenerate = true
   let reason = 'ok'
 
-  // Verificar limite do plano
-  if (generationsUsed >= generationsLimit) {
-    canGenerate = false
-    reason = 'fair_use_limit'
+  // Bloqueios por status de assinatura (somente planos pagos)
+  if (["mensal", "anual"].includes(planType)) {
+    if (subscriptionStatus === 'cancelada') {
+      return {
+        canGenerate: false,
+        reason: 'subscription_cancelled',
+        generationsUsed,
+        generationsLimit,
+      }
+    }
+    if (subscriptionStatus === 'pendente') {
+      return {
+        canGenerate: false,
+        reason: 'payment_pending',
+        generationsUsed,
+        generationsLimit,
+      }
+    }
   }
 
-  // Se não pode gerar pelo plano, verificar créditos
-  if (!canGenerate && hasCredits && !creditsExpired) {
-    canGenerate = true
-    reason = 'ok'
-  } else if (!canGenerate && !hasCredits) {
-    reason = 'no_credits'
-  } else if (!canGenerate && creditsExpired) {
-    reason = 'credits_expired'
+  // Verificar trial expirado (aplica só ao plano gratuito)
+  if (planType === 'gratuito' && profile?.trial_ends_at) {
+    const trialEnd = new Date(profile.trial_ends_at)
+    if (trialEnd < now) {
+      canGenerate = false
+      reason = 'trial_expired'
+    }
+  }
+
+  // Verificar limite do plano gratuito
+  if (planType === 'gratuito' && !['trial_expired'].includes(reason)) {
+    if ((genCount || 0) >= 30) {
+      canGenerate = false
+      reason = 'limit_reached'
+    }
+  }
+
+  // Verificar créditos no plano de créditos
+  if (planType === 'credito') {
+    if (!hasCredits) {
+      canGenerate = false
+      reason = 'no_credits'
+    } else if (creditsExpired) {
+      canGenerate = false
+      reason = 'credits_expired'
+    }
   }
 
   return {
@@ -113,10 +147,21 @@ export async function checkUserAccess(userId: string): Promise<AccessCheck> {
   }
 }
 
-export async function trackGeneration(userId: string | null, concept: string, audience: string): Promise<void> {
-  if (!userId) return;
+export async function trackGeneration(userId: string | null, concept: string, audience: string): Promise<{ ok: boolean, error?: string }> {
+  if (!userId) return { ok: false, error: 'missing_user_id' }
   
   const supabase = await createClient()
+
+  // Obter usuário atual para preencher email do perfil se necessário
+  let currentEmail: string | null = null
+  try {
+    const {
+      data: { user: authUser }
+    } = await supabase.auth.getUser()
+    currentEmail = authUser?.email ?? null
+  } catch (e) {
+    console.error('[DEBUG] Erro ao obter usuário para perfil:', e)
+  }
   
   // Garantir que o perfil existe antes de inserir a geração
   try {
@@ -129,13 +174,14 @@ export async function trackGeneration(userId: string | null, concept: string, au
     if (profileError || !profile) {
       console.error('[DEBUG] Perfil não encontrado, tentando criar:', profileError)
       
-      // Tentar criar o perfil
+      // Tentar criar o perfil com email obrigatório
       const { error: insertError } = await supabase
         .from('profiles')
-        .insert({ id: userId })
+        .insert({ id: userId, email: currentEmail || 'unknown@example.com' })
       
       if (insertError) {
         console.error('[DEBUG] Erro ao criar perfil:', insertError)
+        // Mesmo se falhar, seguimos para tentar inserir a geração
       }
     }
   } catch (e) {
@@ -151,15 +197,19 @@ export async function trackGeneration(userId: string | null, concept: string, au
         user_id: userId,
         concept,
         audience,
-        created_at: now,
-        updated_at: now
+        created_at: now
+        // Não definir updated_at explicitamente para evitar erro de cache/coluna ausente
       })
     
     if (error) {
       console.error('[DEBUG] Erro ao inserir geração:', error)
+      return { ok: false, error: error.message }
     }
+
+    return { ok: true }
   } catch (e) {
     console.error('[DEBUG] Erro ao inserir geração:', e)
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 }
 
@@ -207,13 +257,3 @@ export async function checkAdminAccess(userId: string): Promise<boolean> {
 }
 
 // Função mantida apenas para compatibilidade com código existente
-export function getAnonymousId(): string {
-  const cookieStore = cookies()
-  let anonymousId = cookieStore.get('anonymous_id')?.value
-  
-  if (!anonymousId) {
-    anonymousId = crypto.randomUUID()
-  }
-  
-  return anonymousId
-}

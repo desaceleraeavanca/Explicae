@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import axios from 'axios'
 import { unstable_noStore as noStore } from 'next/cache'
+import { sanitizeForLogs } from "@/lib/logger"
+
+// Sanitização centralizada: usando sanitizeForLogs de '@/lib/logger'
 
 export interface OpenRouterConfig {
   api_key: string
@@ -37,13 +40,81 @@ export interface OpenRouterResponse {
 }
 
 export async function getOpenRouterConfig(): Promise<OpenRouterConfig> {
+  // Forçar revalidação completa
   noStore()
+  
+  // Criar um cliente Supabase fresco a cada chamada
   const supabase = await createClient()
+  
+  // Adicionar timestamp e ID único para garantir que não use cache
+  const timestamp = new Date().getTime()
+  const randomId = Math.random().toString(36).substring(2, 15)
+  console.log(`[MODEL-TEST] Buscando configuração com timestamp: ${timestamp}, id: ${randomId}`)
 
-  const { data, error } = await supabase.from("system_settings").select("value").eq("key", "openrouter_config").single()
+  // Usar fetch direto para evitar qualquer cache do Supabase
+  try {
+    const { data: rawConfig, error: rawError } = await supabase.rpc('get_raw_openrouter_config')
+    
+    if (rawConfig) {
+      // Sanitizar dados sensíveis antes de logar
+      const sanitizedConfig = sanitizeForLogs(rawConfig);
+      console.log(`[MODEL-TEST] Configuração RAW encontrada:`, JSON.stringify(sanitizedConfig, null, 2))
+      
+      // Se temos dados RAW, vamos usá-los diretamente
+      if (typeof rawConfig === 'object' && rawConfig !== null) {
+        console.log(`[MODEL-TEST] Usando configuração RAW do banco`)
+        
+        // Verificar se é um objeto válido com as propriedades necessárias
+        const config = rawConfig as any
+        if (config.api_key !== undefined && 
+            config.default_model !== undefined && 
+            config.fallback_model !== undefined) {
+          
+          console.log(`[MODEL-TEST] Modelo configurado: ${config.default_model}`)
+          console.log(`[MODEL-TEST] Modelo fallback: ${config.fallback_model}`)
+          
+          return {
+            api_key: config.api_key || "",
+            default_model: config.default_model || "google/gemini-2.5-flash-lite",
+            fallback_model: config.fallback_model || "google/gemini-2.5-flash-lite",
+            fair_use_limit: config.fair_use_limit || 1000,
+          }
+        }
+      }
+    } else {
+      console.log(`[MODEL-TEST] Erro ao buscar configuração RAW:`, rawError)
+    }
+  } catch (e) {
+    console.log(`[MODEL-TEST] Exceção ao buscar configuração RAW:`, e)
+  }
 
-  if (error || !data) {
-    // Return default config if not found
+  // Fallback para o método normal se o RAW falhar
+  try {
+    const { data, error } = await supabase
+      .from("system_settings")
+      .select(`value, updated_at`)
+      .eq("key", "openrouter_config")
+      .single()
+
+    if (error || !data) {
+      console.log(`[MODEL-TEST] Configuração não encontrada, usando padrão`)
+      // Return default config if not found
+      return {
+        api_key: "",
+        default_model: "google/gemini-2.5-flash-lite",
+        fallback_model: "google/gemini-2.5-flash-lite",
+        fair_use_limit: 1000,
+      }
+    }
+
+    console.log(`[MODEL-TEST] Configuração encontrada, última atualização: ${data.updated_at}`)
+    console.log(`[MODEL-TEST] Modelo configurado: ${data.value.default_model}`)
+    console.log(`[MODEL-TEST] Modelo fallback: ${data.value.fallback_model}`)
+    
+    return data.value as OpenRouterConfig
+  } catch (e) {
+    console.log(`[MODEL-TEST] Erro ao buscar configuração:`, e)
+    // Return default config if error
     return {
       api_key: "",
       default_model: "google/gemini-2.5-flash-lite",
@@ -51,8 +122,6 @@ export async function getOpenRouterConfig(): Promise<OpenRouterConfig> {
       fair_use_limit: 1000,
     }
   }
-
-  return data.value as OpenRouterConfig
 }
 
 export async function getOpenRouterApiKey(): Promise<string> {
@@ -60,7 +129,7 @@ export async function getOpenRouterApiKey(): Promise<string> {
   
   // Primeiro, tenta pegar da variável de ambiente
   const envKey = process.env.OPENROUTER_API_KEY
-  console.log("[DEBUG] getOpenRouterApiKey - Variável de ambiente:", envKey ? `${envKey.substring(0, 10)}...` : 'não encontrada')
+  console.log("[DEBUG] getOpenRouterApiKey - Variável de ambiente:", envKey ? "***chave encontrada***" : 'não encontrada')
   
   if (envKey) {
     console.log("[DEBUG] getOpenRouterApiKey - Usando chave da variável de ambiente")
@@ -70,10 +139,10 @@ export async function getOpenRouterApiKey(): Promise<string> {
   console.log("[DEBUG] getOpenRouterApiKey - Buscando configuração do banco de dados")
   // Se não encontrar, busca da configuração do banco
   const config = await getOpenRouterConfig()
-  console.log("[DEBUG] getOpenRouterApiKey - Config do banco:", config.api_key ? `${config.api_key.substring(0, 10)}...` : 'não encontrada')
+  console.log("[DEBUG] getOpenRouterApiKey - Config do banco:", config.api_key ? "***chave encontrada***" : 'não encontrada')
   
   const finalKey = config.api_key || ''
-  console.log("[DEBUG] getOpenRouterApiKey - Chave final:", finalKey ? `${finalKey.substring(0, 10)}...` : 'vazia')
+  console.log("[DEBUG] getOpenRouterApiKey - Chave final:", finalKey ? "***chave encontrada***" : 'vazia')
   
   return finalKey
 }
@@ -186,7 +255,7 @@ export async function generateText(
   console.log("[DEBUG] generateText - Iniciando função")
   
   const apiKey = await getOpenRouterApiKey()
-  console.log("[DEBUG] generateText - Chave API obtida:", apiKey ? `${apiKey.substring(0, 15)}...` : 'não encontrada')
+  console.log("[DEBUG] generateText - Chave API obtida:", apiKey ? "***chave encontrada***" : 'não encontrada')
   
   if (!apiKey) {
     throw new Error('OpenRouter API key not found')
@@ -195,6 +264,12 @@ export async function generateText(
   const config = await getOpenRouterConfig()
   const primaryModel = model || config.default_model
   const fallbackModel = config.fallback_model
+  
+  console.log("[MODEL-TEST] ====================================")
+  console.log("[MODEL-TEST] MODELO CONFIGURADO:", config.default_model)
+  console.log("[MODEL-TEST] MODELO SENDO USADO:", primaryModel)
+  console.log("[MODEL-TEST] MODELO FALLBACK:", fallbackModel)
+  console.log("[MODEL-TEST] ====================================")
   
   console.log("[DEBUG] generateText - Modelo principal:", primaryModel)
   console.log("[DEBUG] generateText - Modelo fallback:", fallbackModel)
@@ -258,7 +333,7 @@ export async function generateTextWithUsage(
   console.log("[DEBUG] generateTextWithUsage - Iniciando função")
   
   const apiKey = await getOpenRouterApiKey()
-  console.log("[DEBUG] generateTextWithUsage - Chave API obtida:", apiKey ? `${apiKey.substring(0, 15)}...` : 'não encontrada')
+  console.log("[DEBUG] generateTextWithUsage - Chave API obtida:", apiKey ? "***chave encontrada***" : 'não encontrada')
   
   if (!apiKey) {
     throw new Error('OpenRouter API key not found')

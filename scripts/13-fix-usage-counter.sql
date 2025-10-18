@@ -36,12 +36,12 @@ BEGIN
   -- Inicializa créditos para planos gratuitos se for NULL
   IF user_plan = 'gratuito' AND current_credits IS NULL THEN
     UPDATE public.profiles
-    SET credits_remaining = 99
+    SET credits_remaining = 29
     WHERE id = p_user_id;
   -- Atualiza os créditos para planos gratuitos
   ELSIF user_plan = 'gratuito' THEN
     UPDATE public.profiles
-    SET credits_remaining = GREATEST(COALESCE(credits_remaining, 99) - 1, 0)
+    SET credits_remaining = GREATEST(COALESCE(credits_remaining, 29) - 1, 0)
     WHERE id = p_user_id;
   ELSIF user_plan = 'credito' THEN
     UPDATE public.profiles

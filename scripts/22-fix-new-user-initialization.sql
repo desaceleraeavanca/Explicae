@@ -5,13 +5,13 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Create profile with 100 initial credits for free users
+  -- Create profile with 30 initial credits for free users
   INSERT INTO public.profiles (id, email, full_name, credits_remaining, plan_type)
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    100,  -- Inicializa com 100 créditos para todos os usuários
+    30,  -- Inicializa com 30 créditos para todos os usuários
     'gratuito'  -- Plano padrão é gratuito
   );
   

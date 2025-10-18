@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { generateTextWithUsage } from "@/lib/openrouter"
 import { checkAdminAccess } from "@/lib/access-control"
+import { maskEmail, safeLog, safeError } from "@/lib/logger"
+
+// maskEmail agora é importado de '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,8 +38,8 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    console.log(`[MODEL-TEST] Admin ${user.email} testando modelo: ${model}`)
-    console.log(`[MODEL-TEST] Prompt: ${prompt.substring(0, 100)}...`)
+    safeLog(`[MODEL-TEST] Admin ${maskEmail(user.email || '')} testando modelo: ${model}`)
+    safeLog(`[MODEL-TEST] Prompt: ${prompt.substring(0, 100)}...`)
     
     const startTime = Date.now()
     
@@ -56,8 +59,8 @@ export async function POST(request: NextRequest) {
       const endTime = Date.now()
       const duration = endTime - startTime
       
-      console.log(`[MODEL-TEST] Sucesso! Modelo ${model} respondeu em ${duration}ms`)
-      console.log(`[MODEL-TEST] Usage:`, result.usage)
+      safeLog(`[MODEL-TEST] Sucesso! Modelo ${model} respondeu em ${duration}ms`)
+      safeLog(`[MODEL-TEST] Usage:`, result.usage)
       
       return NextResponse.json({
         success: true,
@@ -78,7 +81,7 @@ export async function POST(request: NextRequest) {
       const endTime = Date.now()
       const duration = endTime - startTime
       
-      console.error(`[MODEL-TEST] Erro no modelo ${model}:`, modelError)
+      safeError(`[MODEL-TEST] Erro no modelo ${model}:`, modelError)
       
       return NextResponse.json({
         success: false,
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
     
   } catch (err) {
-    console.error("Erro inesperado no teste de modelo:", err)
+    safeError("Erro inesperado no teste de modelo:", err)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

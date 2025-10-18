@@ -7,7 +7,7 @@ export const ANONYMOUS_LIMIT = 3;
 
 // Limites de uso para diferentes planos
 export const USAGE_LIMITS = {
-  FREE: 8,
+  FREE: 30,
   BASIC: 50,
   PRO: 200,
   ENTERPRISE: 1000

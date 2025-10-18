@@ -1,7 +1,7 @@
 -- Script para resetar o uso de todos os usuários
 -- Atualiza os créditos para usuários gratuitos
 UPDATE public.profiles
-SET credits_remaining = 100
+SET credits_remaining = 30
 WHERE plan_type = 'gratuito';
 
 -- Atualiza créditos para planos de crédito
@@ -10,7 +10,7 @@ SET credits_remaining = 300
 WHERE plan_type = 'credito';
 
 -- Atualiza especificamente o usuário pereiraadiilson@gmail.com
--- Define manualmente o valor correto para total_analogies (8) e credits_remaining (92)
+-- Define manualmente o valor correto para total_analogies (8) e credits_remaining (22)
 UPDATE public.user_stats us
 SET 
   total_analogies = 8,
@@ -18,16 +18,15 @@ SET
 FROM public.profiles p
 WHERE us.user_id = p.id AND p.email = 'pereiraadiilson@gmail.com';
 
--- Atualiza os créditos do usuário pereiraadiilson@gmail.com para 92 (100 créditos iniciais - 8 analogias geradas)
+-- Atualiza os créditos do usuário pereiraadiilson@gmail.com para 22 (30 créditos iniciais - 8 analogias geradas)
 UPDATE public.profiles p
-SET credits_remaining = 92
+SET credits_remaining = 22
 WHERE p.email = 'pereiraadiilson@gmail.com';
 
 -- Atualiza também a tabela de gerações para garantir que a contagem seja consistente
-INSERT INTO public.generations (user_id, anonymous_id, concept, audience, created_at)
+INSERT INTO public.generations (user_id, concept, audience, created_at)
 SELECT 
   p.id, 
-  NULL, 
   'Ajuste de contagem', 
   'Sistema', 
   NOW()

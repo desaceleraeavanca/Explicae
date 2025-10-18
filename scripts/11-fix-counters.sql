@@ -1,7 +1,7 @@
 -- Script para corrigir os contadores de créditos e analogias
 -- Inicializa os créditos para usuários gratuitos que estão com valor 0 ou NULL
 UPDATE public.profiles
-SET credits_remaining = 100
+SET credits_remaining = 30
 WHERE (credits_remaining IS NULL OR credits_remaining = 0)
 AND plan_type = 'gratuito';
 

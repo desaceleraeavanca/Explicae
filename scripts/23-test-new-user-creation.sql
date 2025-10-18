@@ -59,7 +59,7 @@ BEGIN
                 test_user_id,
                 'teste-trigger@explicae.com',
                 'Usuário Teste Manual',
-                100,
+                30,
                 'gratuito'
             );
             
@@ -114,7 +114,7 @@ SELECT
         ELSE 0
     END as generations_used_seria,
     CASE 
-        WHEN p.plan_type = 'gratuito' THEN 100
+        WHEN p.plan_type = 'gratuito' THEN 30
         WHEN p.plan_type = 'credito' THEN p.credits_remaining
         ELSE 999999
     END as generations_limit_seria

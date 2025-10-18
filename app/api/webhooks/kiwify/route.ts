@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import type { NextRequest } from "next/server"
+import { maskEmail, safeLog, safeError } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    console.log("[v0] Kiwify webhook received:", body)
+    safeLog("[v0] Kiwify webhook received:", body)
 
     // Validate webhook (add your Kiwify webhook secret validation here)
     // const signature = request.headers.get("x-kiwify-signature")
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       const { data: profile } = await supabase.from("profiles").select("*").eq("email", customer_email).single()
 
       if (!profile) {
-        console.error("[v0] User not found:", customer_email)
+        safeError("[v0] User not found:", maskEmail(customer_email))
         return Response.json({ error: "User not found" }, { status: 404 })
       }
 
@@ -54,11 +55,11 @@ export async function POST(request: NextRequest) {
       const { error } = await supabase.from("profiles").update(updateData).eq("id", profile.id)
 
       if (error) {
-        console.error("[v0] Error updating user plan:", error)
+        safeError("[v0] Error updating user plan:", error)
         return Response.json({ error: "Failed to update user" }, { status: 500 })
       }
 
-      console.log("[v0] User plan updated:", customer_email, planType)
+      safeLog("[v0] User plan updated:", maskEmail(customer_email), planType)
       return Response.json({ success: true })
     }
 
@@ -71,17 +72,17 @@ export async function POST(request: NextRequest) {
         .eq("email", customer_email)
 
       if (error) {
-        console.error("[v0] Error cancelling subscription:", error)
+        safeError("[v0] Error cancelling subscription:", error)
         return Response.json({ error: "Failed to cancel subscription" }, { status: 500 })
       }
 
-      console.log("[v0] Subscription cancelled:", customer_email)
+      safeLog("[v0] Subscription cancelled:", maskEmail(customer_email))
       return Response.json({ success: true })
     }
 
     return Response.json({ success: true })
   } catch (error) {
-    console.error("[v0] Webhook error:", error)
+    safeError("[v0] Webhook error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
   }
 }

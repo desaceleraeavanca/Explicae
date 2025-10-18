@@ -1,4 +1,4 @@
-Write-Host "Teste de contador de uso para usuários logados e anônimos" -ForegroundColor Cyan
+Write-Host "Teste de contador de uso para usuários logados" -ForegroundColor Cyan
 Write-Host "=================================================" -ForegroundColor Cyan
 
 $baseUrl = "http://localhost:3000"
@@ -23,6 +23,11 @@ try {
     exit 1
 }
 
+if ($data1.error -eq "login_required") {
+    Write-Host "Não autenticado. Faça login no app, depois execute novamente este script." -ForegroundColor Yellow
+    exit 0
+}
+
 Write-Host "Uso após primeira chamada: usado=$($data1.usage.used), limite=$($data1.usage.limit), restante=$($data1.usage.remaining)" -ForegroundColor Magenta
 
 # Segunda chamada ao endpoint de teste (usando os cookies da primeira chamada)
@@ -37,6 +42,11 @@ try {
 } catch {
     Write-Host "Erro ao converter resposta para JSON: $_" -ForegroundColor Red
     exit 1
+}
+
+if ($data2.error -eq "login_required") {
+    Write-Host "Não autenticado. Faça login no app, depois execute novamente este script." -ForegroundColor Yellow
+    exit 0
 }
 
 Write-Host "Uso após segunda chamada: usado=$($data2.usage.used), limite=$($data2.usage.limit), restante=$($data2.usage.remaining)" -ForegroundColor Magenta
@@ -56,7 +66,7 @@ if ($data2.usage.used -gt $data1.usage.used) {
 if ($data2.user) {
     Write-Host "`nUsuário logado: $($data2.user.email)" -ForegroundColor Cyan
 } else {
-    Write-Host "`nUsuário anônimo: $($data2.anonymousId)" -ForegroundColor Cyan
+    Write-Host "`nNão autenticado. Faça login e execute novamente o teste." -ForegroundColor Cyan
 }
 
 # Aguardar um pouco

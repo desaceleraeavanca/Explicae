@@ -46,7 +46,7 @@ async function debugUserAccess(userId) {
 
   // Calcular valores
   let generationsUsed = 0
-  let generationsLimit = profile?.plan_limit || 100
+  let generationsLimit = profile?.plan_limit || 30
 
   if (profile?.plan_type === 'gratuito') {
     generationsUsed = stats?.monthly_analogies || 0

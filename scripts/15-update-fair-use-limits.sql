@@ -14,7 +14,7 @@ DECLARE
   user_credits INT;
   monthly_usage INT;
   monthly_limit INT := 3000; -- Novo limite para planos mensal e anual (3000 chamadas)
-  free_limit INT := 100;     -- Limite para plano gratuito
+  free_limit INT := 30;     -- Limite para plano gratuito
 BEGIN
   -- Obtém o plano e créditos do usuário
   SELECT plan_type, credits_remaining INTO user_plan, user_credits

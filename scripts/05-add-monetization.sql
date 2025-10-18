@@ -2,18 +2,18 @@
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS plan_type TEXT DEFAULT 'gratuito' CHECK (plan_type IN ('gratuito', 'credito', 'mensal', 'anual', 'admin', 'cortesia', 'promo', 'parceria', 'presente'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'ativa' CHECK (subscription_status IN ('ativa', 'pendente', 'cancelada'));
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS credits_remaining INTEGER DEFAULT 100;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS credits_remaining INTEGER DEFAULT 30;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS kiwify_customer_id TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS last_payment_date TIMESTAMPTZ;
 
 -- Create generations tracking table
 CREATE TABLE IF NOT EXISTS public.generations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-  anonymous_id TEXT,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   concept TEXT NOT NULL,
   audience TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Enable RLS for generations
@@ -24,11 +24,11 @@ CREATE POLICY "Users can view own generations" ON public.generations
   FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert own generations" ON public.generations
-  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Create index for performance
 CREATE INDEX IF NOT EXISTS idx_generations_user_id ON public.generations(user_id);
-CREATE INDEX IF NOT EXISTS idx_generations_anonymous_id ON public.generations(anonymous_id);
+
 CREATE INDEX IF NOT EXISTS idx_generations_created_at ON public.generations(created_at DESC);
 
 -- Function to check user access
@@ -62,17 +62,17 @@ BEGIN
   IF user_plan = 'gratuito' THEN
     -- Check trial period (7 days)
     IF trial_end IS NOT NULL AND NOW() > trial_end THEN
-      RETURN QUERY SELECT FALSE, 'trial_expired'::TEXT, gen_count, 100;
+      RETURN QUERY SELECT FALSE, 'trial_expired'::TEXT, gen_count, 30;
       RETURN;
     END IF;
-    
-    -- Check generation limit (100)
-    IF gen_count >= 100 THEN
-      RETURN QUERY SELECT FALSE, 'limit_reached'::TEXT, gen_count, 100;
-      RETURN;
-    END IF;
-    
-    RETURN QUERY SELECT TRUE, 'ok'::TEXT, gen_count, 100;
+     
+    -- Check generation limit (30)
+    IF gen_count >= 30 THEN
+      RETURN QUERY SELECT FALSE, 'limit_reached'::TEXT, gen_count, 30;
+       RETURN;
+     END IF;
+     
+    RETURN QUERY SELECT TRUE, 'ok'::TEXT, gen_count, 30;
   ELSIF user_plan = 'credito' THEN
     -- Check credits
     IF user_credits <= 0 THEN
@@ -111,16 +111,16 @@ BEGIN
 
   -- Inicializa créditos para planos gratuitos se for NULL
   IF user_plan = 'gratuito' AND current_credits IS NULL THEN
-    UPDATE public.profiles
-    SET credits_remaining = 99
-    WHERE id = user_id_param;
-    RETURN TRUE;
+     UPDATE public.profiles
+    SET credits_remaining = 30
+     WHERE id = user_id_param;
+     RETURN TRUE;
   -- Atualiza os créditos para planos gratuitos
   ELSIF user_plan = 'gratuito' THEN
-    UPDATE public.profiles
-    SET credits_remaining = GREATEST(COALESCE(credits_remaining, 99) - 1, 0)
-    WHERE id = user_id_param;
-    RETURN TRUE;
+     UPDATE public.profiles
+    SET credits_remaining = GREATEST(COALESCE(credits_remaining, 29) - 1, 0)
+     WHERE id = user_id_param;
+     RETURN TRUE;
   ELSIF user_plan = 'credito' THEN
     UPDATE public.profiles
     SET credits_remaining = GREATEST(credits_remaining - 1, 0)

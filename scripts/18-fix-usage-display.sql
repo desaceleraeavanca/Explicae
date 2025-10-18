@@ -16,17 +16,17 @@ END $$;
 -- para usuários que não têm registros de uso
 UPDATE public.user_stats
 SET monthly_analogies = 0
-WHERE monthly_analogies IS NULL OR monthly_analogies > 100;
+WHERE monthly_analogies IS NULL OR monthly_analogies > 30;
 
 -- Em seguida, atualiza a tabela profiles para garantir que credits_remaining
 -- tenha o valor correto baseado no plano
 UPDATE public.profiles
 SET credits_remaining = 
   CASE 
-    WHEN plan_type = 'gratuito' THEN 100
+    WHEN plan_type = 'gratuito' THEN 30
     WHEN plan_type = 'credito' THEN 300
     WHEN plan_type IN ('mensal', 'anual', 'admin', 'cortesia', 'promo', 'parceria', 'presente') THEN 999999
-    ELSE 100
+    ELSE 30
   END
 WHERE credits_remaining = 0 OR credits_remaining IS NULL;
 

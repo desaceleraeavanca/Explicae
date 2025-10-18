@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,7 +17,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MoreVertical } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 
 interface User {
   id: string
@@ -46,6 +46,25 @@ export function UserDetailsDialog({ user, onUpdate }: UserDetailsDialogProps) {
     credits_remaining: user.credits_remaining,
   })
   const { toast } = useToast()
+  const [alignLoading, setAlignLoading] = useState(false)
+
+  async function alignCreditsQuick() {
+    setAlignLoading(true)
+    try {
+      const res = await fetch("/api/admin/fix-user-credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, overwrite_expiry: false }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) throw new Error(data.error || "Falha ao alinhar")
+      toast({ title: "Créditos alinhados", description: `Usuário: ${user.email}` })
+    } catch (err) {
+      toast({ title: "Erro", description: err instanceof Error ? err.message : "Falha inesperada", variant: "destructive" })
+    } finally {
+      setAlignLoading(false)
+    }
+  }
 
   async function handleSave() {
     setLoading(true)
@@ -168,6 +187,9 @@ export function UserDetailsDialog({ user, onUpdate }: UserDetailsDialogProps) {
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancelar
+          </Button>
+          <Button variant="secondary" onClick={alignCreditsQuick} disabled={alignLoading}>
+            {alignLoading ? "Alinhando..." : "Alinhar créditos"}
           </Button>
           <Button onClick={handleSave} disabled={loading}>
             {loading ? "Salvando..." : "Salvar Alterações"}

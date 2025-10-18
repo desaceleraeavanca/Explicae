@@ -24,7 +24,7 @@ export default async function DashboardPage() {
       id: user.id,
       email: user.email || "",
       full_name: user.user_metadata?.full_name || "",
-      credits_remaining: 100, // Inicializa com 100 créditos para plano gratuito
+      credits_remaining: 30, // Inicializa com 30 créditos para plano gratuito
     })
 
     // Create user stats as well
@@ -72,6 +72,19 @@ export default async function DashboardPage() {
 
   const accessInfo = await checkUserAccess(user.id)
 
+// Buscar validade de créditos (fallback para user_credits se perfil não tiver)
+const { data: userCredits } = await supabase
+  .from("user_credits")
+  .select("credits_remaining, expiry_date")
+  .eq("user_id", user.id)
+  .order("expiry_date", { ascending: true })
+  .limit(1)
+  .maybeSingle()
+
+const isCreditPlan = profile?.plan_type === 'credito'
+const creditsExpiresAtValue = isCreditPlan ? (profile?.credits_expires_at || userCredits?.expiry_date) : undefined
+const creditsRemainingValue = isCreditPlan ? (profile?.credits_remaining ?? userCredits?.credits_remaining) : undefined
+
   return (
     <div className="min-h-screen bg-background">
       {/* DashboardNav removido pois já está no layout.tsx */}
@@ -93,10 +106,11 @@ export default async function DashboardPage() {
           </div>
           <UsageCard
             planType={profile?.plan_type || "gratuito"}
-            creditsRemaining={profile?.credits_remaining}
+            creditsRemaining={creditsRemainingValue}
             generationsUsed={accessInfo.generationsUsed}
             generationsLimit={accessInfo.generationsLimit}
             trialEndsAt={profile?.trial_ends_at}
+            creditsExpiresAt={creditsExpiresAtValue}
           />
         </div>
 

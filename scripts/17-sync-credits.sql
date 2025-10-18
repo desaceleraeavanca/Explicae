@@ -6,9 +6,9 @@ INSERT INTO public.user_credits (user_id, credits_remaining, expiry_date)
 SELECT 
   id as user_id, 
   CASE 
-    WHEN plan_type = 'gratuito' THEN 100
+    WHEN plan_type = 'gratuito' THEN 30
     WHEN plan_type = 'credito' THEN 300
-    ELSE 100
+    ELSE 30
   END as credits_remaining,
   (CURRENT_DATE + INTERVAL '1 year')::date as expiry_date
 FROM public.profiles p
@@ -18,7 +18,7 @@ WHERE NOT EXISTS (
 
 -- Atualiza os registros existentes que têm 0 créditos
 UPDATE public.user_credits uc
-SET credits_remaining = 100
+SET credits_remaining = 30
 FROM public.profiles p
 WHERE uc.user_id = p.id
   AND p.plan_type = 'gratuito'

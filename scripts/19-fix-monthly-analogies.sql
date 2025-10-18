@@ -12,16 +12,16 @@ BEGIN
 END $$;
 
 -- Atualizar os valores de monthly_analogies com base no total_analogies
--- Limitando a 100 para planos gratuitos para não bloquear o acesso
+-- Limitando a 30 para planos gratuitos para não bloquear o acesso
 UPDATE user_stats 
-SET monthly_analogies = LEAST(total_analogies, 100)
+SET monthly_analogies = LEAST(total_analogies, 30)
 WHERE monthly_analogies IS NULL OR monthly_analogies = 0;
 
 -- Garantir que os valores de credits_remaining estejam corretos na tabela profiles
 UPDATE profiles
 SET credits_remaining = 
   CASE 
-    WHEN plan_type = 'gratuito' THEN 100
+    WHEN plan_type = 'gratuito' THEN 30
     WHEN plan_type = 'credito' THEN 300
     ELSE 999999
   END
@@ -46,10 +46,10 @@ WHERE user_credits.user_id = p.id
 AND user_credits.credits_remaining = 0
 AND p.credits_remaining > 0;
 
--- Garantir que os valores de monthly_analogies sejam menores que 100 para planos gratuitos
+-- Garantir que os valores de monthly_analogies sejam menores que 30 para planos gratuitos
 UPDATE user_stats
 SET monthly_analogies = 0
 FROM profiles
 WHERE user_stats.user_id = profiles.id
 AND profiles.plan_type = 'gratuito'
-AND user_stats.monthly_analogies >= 100;
+AND user_stats.monthly_analogies >= 30;

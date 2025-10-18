@@ -27,8 +27,8 @@ SELECT
   CASE 
     WHEN s.total_analogies != s.monthly_analogies AND p.plan_type = 'gratuito' 
     THEN 'PROBLEMA: total != monthly para plano gratuito'
-    WHEN s.monthly_analogies > 100 AND p.plan_type = 'gratuito'
-    THEN 'PROBLEMA: monthly > 100 para plano gratuito'
+    WHEN s.monthly_analogies > 30 AND p.plan_type = 'gratuito'
+    THEN 'PROBLEMA: monthly > 30 para plano gratuito'
     ELSE 'OK'
   END as diagnostico
 FROM profiles p
@@ -40,7 +40,7 @@ WHERE p.email IN ('maria@explicae.com', 'pereiraadilson@ymail.com', 'pereiraadii
 UPDATE user_stats 
 SET monthly_analogies = CASE 
   WHEN (SELECT plan_type FROM profiles WHERE id = user_stats.user_id) = 'gratuito' 
-  THEN LEAST(total_analogies, 100)  -- Máximo 100 para planos gratuitos
+  THEN LEAST(total_analogies, 30)  -- Máximo 30 para planos gratuitos
   ELSE monthly_analogies  -- Manter valor atual para outros planos
 END
 WHERE user_id IN (
@@ -57,7 +57,7 @@ SELECT
   s.monthly_analogies,
   s.total_analogies,
   CASE 
-    WHEN p.plan_type = 'gratuito' THEN CONCAT(s.monthly_analogies, '/100')
+    WHEN p.plan_type = 'gratuito' THEN CONCAT(s.monthly_analogies, '/30')
     WHEN p.plan_type = 'credito' THEN CONCAT('Créditos: ', p.credits_remaining)
     ELSE 'Ilimitado'
   END as display_esperado

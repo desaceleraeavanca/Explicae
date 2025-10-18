@@ -10,6 +10,7 @@ interface UsageCardProps {
   generationsUsed?: number
   generationsLimit?: number
   trialEndsAt?: string
+  creditsExpiresAt?: string
 }
 
 export function UsageCard({
@@ -18,10 +19,12 @@ export function UsageCard({
   generationsUsed,
   generationsLimit,
   trialEndsAt,
+  creditsExpiresAt,
 }: UsageCardProps) {
   const isUnlimited = ["mensal", "anual", "admin", "cortesia", "promo", "parceria", "presente"].includes(planType)
   const isCredits = planType === "credito"
   const isTrial = planType === "gratuito"
+  const showCreditsSection = isCredits && (((creditsRemaining ?? 0) > 0) || !!creditsExpiresAt)
 
   const getTrialDaysRemaining = () => {
     if (!trialEndsAt) return 0
@@ -31,7 +34,16 @@ export function UsageCard({
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
   }
 
+  const getDaysUntil = (expiresAt?: string) => {
+    if (!expiresAt) return undefined
+    const now = new Date()
+    const end = new Date(expiresAt)
+    const diff = end.getTime() - now.getTime()
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+  }
+
   const trialDays = getTrialDaysRemaining()
+  const creditsDaysLeft = getDaysUntil(creditsExpiresAt)
 
   return (
     <Card>
@@ -50,12 +62,26 @@ export function UsageCard({
           </div>
         )}
 
-        {isCredits && (
+        {showCreditsSection && (
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Faíscas restantes:</span>
               <span className="font-semibold">{creditsRemaining || 0}</span>
             </div>
+            {creditsExpiresAt && (
+              <div className="flex justify-between text-sm">
+                <span>Validade:</span>
+                <span className="font-semibold">
+                  {new Date(creditsExpiresAt).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
+            )}
+            {typeof creditsDaysLeft === "number" && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Expira em:</span>
+                <span className="font-medium">{creditsDaysLeft} dias</span>
+              </div>
+            )}
             {creditsRemaining !== undefined && creditsRemaining < 20 && (
               <Button asChild className="w-full" size="sm">
                 <Link href="/pricing">Recarregar Faíscas</Link>
@@ -70,10 +96,10 @@ export function UsageCard({
               <div className="flex justify-between text-sm">
                 <span>Faíscas utilizadas:</span>
                 <span className="font-semibold">
-                  {generationsUsed || 0} / 100
+                  {(generationsUsed || 0)} / {(generationsLimit ?? 30)}
                 </span>
               </div>
-              <Progress value={Math.min(((generationsUsed || 0) / 100) * 100, 100)} />
+              <Progress value={Math.min(((generationsUsed || 0) / (generationsLimit ?? 30)) * 100, 100)} />
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">

@@ -1,34 +1,31 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, Sparkles, Zap, Crown } from "lucide-react"
+import { Check, Sparkles, Zap, Crown, Sun, Compass } from "lucide-react"
 import Link from "next/link"
 
 export default function PricingPage() {
   const plans = [
     {
       name: "Descoberta",
-      price: "Grátis",
-      period: "7 dias",
-      icon: Sparkles,
-      description: "Teste todas as funcionalidades",
+      price: "Gratuito",
+      icon: Compass,
+      description: "Ideal para testar a plataforma",
       features: [
-        "100 faíscas",
-        "Banco de analogias pessoal",
-        "Perfis de público-alvo",
-        "Faísca criativa diária",
-        "Analisador de clareza",
-        "Sistema de badges",
+        "30 faíscas para gerar analogias",
+        "Acesso ao gerador de analogias",
+        "Recursos básicos",
+        "Duração de 7 dias",
       ],
-      cta: "Começar teste grátis",
-      href: "/auth/signup",
-      highlighted: false,
+      cta: "Começar grátis",
+      href: "/dashboard",
     },
+
     {
       name: "Pacote de Faíscas",
       price: "R$ 34,90",
-      period: "300 analogias",
+
       icon: Zap,
-      description: "Recarregue quando precisar",
+      description: "Recarregue quando precisar (validade de 12 meses)",
       features: [
         "300 faíscas",
         "Banco de analogias pessoal",
@@ -46,7 +43,7 @@ export default function PricingPage() {
       name: "Clareza",
       price: "R$ 24,90",
       period: "/mês",
-      icon: Crown,
+      icon: Sun,
       description: "Analogias ilimitadas",
       features: [
         "Faíscas ilimitadas",
@@ -102,45 +99,51 @@ export default function PricingPage() {
               <Card key={plan.name} className={plan.highlighted ? "border-primary shadow-lg scale-105" : ""}>
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
-                    <Icon className="h-6 w-6 text-primary" />
+                    {Icon ? (
+                      <Icon className="h-6 w-6 text-primary" />
+                    ) : (
+                      <Sparkles className="h-6 w-6 text-primary" />
+                    )}
                     <CardTitle>{plan.name}</CardTitle>
                   </div>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground ml-1">{plan.period}</span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  {plan.kiwifyLink ? (
-                    <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                      {plan.cta}
-                    </Button>
-                  ) : (
-                    <Button asChild className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                      <Link href={plan.href}>{plan.cta}</Link>
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            )
-          })}
-        </div>
+                   <CardDescription>{plan.description}</CardDescription>
+                   <div className="mt-4">
+                     <span className="text-4xl font-bold">{plan.price}</span>
+                     {plan.period && (
+                       <span className="text-muted-foreground ml-1">{plan.period}</span>
+                     )}
+                   </div>
+                 </CardHeader>
+                 <CardContent>
+                   <ul className="space-y-3">
+                     {plan.features.map((feature) => (
+                       <li key={feature} className="flex items-start gap-2">
+                         <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                         <span className="text-sm">{feature}</span>
+                       </li>
+                     ))}
+                   </ul>
+                 </CardContent>
+                 <CardFooter>
+                   {plan.kiwifyLink ? (
+                     <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
+                       {plan.cta}
+                     </Button>
+                   ) : (
+                     <Button asChild className="w-full" variant={plan.highlighted ? "default" : "outline"}>
+                       <Link href={plan.href}>{plan.cta}</Link>
+                     </Button>
+                   )}
+                 </CardFooter>
+               </Card>
+             )
+           })}
+         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-muted-foreground">Todos os planos incluem acesso completo às ferramentas do Explicaê</p>
-        </div>
-      </div>
-    </div>
-  )
-}
+         <div className="text-center mt-12">
+           <p className="text-muted-foreground">Todos os planos incluem acesso completo às ferramentas do Explicaê</p>
+         </div>
+       </div>
+     </div>
+   )
+ }
