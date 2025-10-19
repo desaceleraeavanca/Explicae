@@ -17,8 +17,12 @@ import { useEffect, useState } from "react"
 export function DashboardNav() {
   const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [viewAsUser, setViewAsUser] = useState(false)
 
   useEffect(() => {
+    const flag = typeof window !== "undefined" ? localStorage.getItem("viewAsUser") === "true" : false
+    setViewAsUser(flag)
+
     const checkAdmin = async () => {
       const supabase = createClient()
       const {
@@ -27,7 +31,6 @@ export function DashboardNav() {
 
       if (user) {
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
         if (profile?.role === "admin") {
           setIsAdmin(true)
         }
@@ -42,6 +45,15 @@ export function DashboardNav() {
     await supabase.auth.signOut()
     router.push("/")
   }
+
+  const handleReturnToAdmin = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("viewAsUser")
+    }
+    router.push("/admin")
+  }
+
+  const showAdminLinks = isAdmin && !viewAsUser
 
   return (
     <nav className="border-b bg-card">
@@ -73,7 +85,7 @@ export function DashboardNav() {
             <Link href="/dashboard/support" className="text-sm font-medium hover:text-accent transition-colors">
               Suporte
             </Link>
-            {isAdmin && (
+            {showAdminLinks && (
               <Link
                 href="/admin"
                 className="text-sm font-medium hover:text-accent transition-colors flex items-center gap-1"
@@ -85,6 +97,13 @@ export function DashboardNav() {
           </div>
 
           <div className="flex items-center gap-2">
+            {isAdmin && viewAsUser && (
+              <Button variant="outline" size="sm" onClick={handleReturnToAdmin} className="hidden md:flex bg-transparent">
+                <Shield className="mr-2 h-4 w-4" />
+                Voltar ao modo Admin
+              </Button>
+            )}
+
             <Button asChild variant="outline" size="sm" className="hidden md:flex bg-transparent">
               <Link href="/pricing">
                 <Crown className="mr-2 h-4 w-4" />
@@ -102,7 +121,7 @@ export function DashboardNav() {
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/profile">Perfil</Link>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {showAdminLinks && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin" className="flex items-center">
                       <Shield className="mr-2 h-4 w-4" />

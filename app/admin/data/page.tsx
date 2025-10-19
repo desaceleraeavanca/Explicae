@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/admin-utils"
-import { AdminNav } from "@/components/admin/admin-nav"
+
 import { DatabaseOverview } from "@/components/admin/database-overview"
 import { TablesList } from "@/components/admin/tables-list"
 
@@ -16,20 +16,17 @@ export default async function AdminDataPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Gerenciamento de Dados</h1>
-          <p className="text-muted-foreground">Visualize e gerencie os dados do sistema</p>
-        </div>
+    <div className="p-6 lg:p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Dados</h1>
+        <p className="text-muted-foreground mt-2">Visualize e gerencie os dados do sistema</p>
+      </div>
 
-        <DatabaseOverview />
+      <DatabaseOverview />
 
-        <div className="mt-6">
-          <TablesList />
-        </div>
-      </main>
+      <div className="mt-6">
+        <TablesList />
+      </div>
     </div>
   )
 }

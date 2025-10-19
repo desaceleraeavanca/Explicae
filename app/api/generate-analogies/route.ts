@@ -301,8 +301,17 @@ Crie 3 analogias diferentes para o conceito abaixo, adaptadas para o universo, l
           })
         : []
 
+      // Garante que sempre retornamos exatamente 3 analogias
+      let resultAnalogies = normalized
+      if (resultAnalogies.length < 3) {
+        const pad = (fallbackAnalogies || []).map((text, idx) => ({ title: `Analogia ${idx + 1}`, description: text }))
+        resultAnalogies = [...resultAnalogies, ...pad].slice(0, 3)
+      } else if (resultAnalogies.length > 3) {
+        resultAnalogies = resultAnalogies.slice(0, 3)
+      }
+
       return Response.json({
-        analogies: normalized,
+        analogies: resultAnalogies,
         usage: usageInfo || null,
       })
     } catch (error: any) {

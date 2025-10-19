@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/admin-utils"
-import { AdminNav } from "@/components/admin/admin-nav"
+
 import { OpenRouterSettings } from "@/components/admin/openrouter-settings"
 import { ModelTester } from "@/components/admin/model-tester"
 
@@ -16,19 +16,16 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Configurações do Sistema</h1>
-          <p className="text-muted-foreground">Gerencie configurações globais do Explicaê</p>
-        </div>
+    <div className="p-6 lg:p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
+        <p className="text-muted-foreground mt-2">Gerencie configurações globais do Explicaê</p>
+      </div>
 
-        <div className="space-y-6">
-          <OpenRouterSettings userId={user.id} />
-          <ModelTester />
-        </div>
-      </main>
+      <div className="space-y-6">
+        <OpenRouterSettings userId={user.id} />
+        <ModelTester />
+      </div>
     </div>
   )
 }

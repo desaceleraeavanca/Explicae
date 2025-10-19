@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/admin-utils"
-import { AdminNav } from "@/components/admin/admin-nav"
-import { AuditLogs } from "@/components/admin/audit-logs"
+
 import { SecurityOverview } from "@/components/admin/security-overview"
+import { AuditLogs } from "@/components/admin/audit-logs"
 
 export default async function AdminSecurityPage() {
   const supabase = await createClient()
@@ -16,20 +16,17 @@ export default async function AdminSecurityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Segurança e Auditoria</h1>
-          <p className="text-muted-foreground">Monitore acessos e ações do sistema</p>
-        </div>
+    <div className="p-6 lg:p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-foreground">Segurança</h1>
+        <p className="text-muted-foreground mt-2">Monitoramento e políticas de segurança</p>
+      </div>
 
-        <SecurityOverview />
+      <SecurityOverview />
 
-        <div className="mt-6">
-          <AuditLogs />
-        </div>
-      </main>
+      <div className="mt-6">
+        <AuditLogs />
+      </div>
     </div>
   )
 }

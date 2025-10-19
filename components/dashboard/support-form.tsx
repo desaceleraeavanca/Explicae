@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,10 +31,37 @@ export function SupportForm({ userId }: SupportFormProps) {
     rating: 5,
   })
   const { toast } = useToast()
+  const [isMaestria, setIsMaestria] = useState(false)
+  useEffect(() => {
+    const supabase = createClient()
+    async function loadProfile() {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("plan_type, subscription_status")
+          .eq("id", userId)
+          .single()
+        if (!error && data) {
+          setIsMaestria(data.plan_type === "anual" && data.subscription_status === "ativa")
+        }
+      } catch {}
+    }
+    loadProfile()
+  }, [userId])
 
   async function handleTicketSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+
+    if (ticketData.priority === "urgente" && !isMaestria) {
+      toast({
+        title: "Disponível apenas no plano Maestria (Anual)",
+        description: "A prioridade Urgente é exclusiva para assinantes anuais.",
+        variant: "destructive",
+      })
+      setLoading(false)
+      return
+    }
 
     const supabase = createClient()
     const { error } = await supabase.from("support_tickets").insert({
@@ -125,9 +152,12 @@ export function SupportForm({ userId }: SupportFormProps) {
                   <SelectItem value="baixa">Baixa</SelectItem>
                   <SelectItem value="normal">Média</SelectItem>
                   <SelectItem value="alta">Alta</SelectItem>
-                  <SelectItem value="urgente">Urgente</SelectItem>
+                  {isMaestria && <SelectItem value="urgente">Urgente</SelectItem>}
                 </SelectContent>
               </Select>
+              {!isMaestria && (
+                <p className="text-xs text-muted-foreground">“Urgente” disponível no plano Maestria (Anual).</p>
+              )}
             </div>
 
             <div className="space-y-2">

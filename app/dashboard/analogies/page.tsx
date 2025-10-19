@@ -1,35 +1,26 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-// Removido import do DashboardNav pois já está no layout.tsx
-import { AnalogyBank } from "@/components/dashboard/analogy-bank"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
+import { AnalogyBankHeader } from "@/components/analogy-bank-header"
+import { AnalogyBankGrid } from "@/components/analogy-bank-grid"
 
-export default async function AnalogyBankPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
-  const { data: analogies } = await supabase
-    .from("analogies")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-
+export default function AnalogiesPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* DashboardNav removido pois já está no layout.tsx */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Banco de Analogias</h1>
-          <p className="text-muted-foreground">Gerencie, organize e favorite suas analogias</p>
-        </div>
+      <DashboardHeader />
+      <div className="flex">
+        <DashboardSidebar />
+        <main className="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Banco de Analogias</h1>
+              <p className="text-muted-foreground mt-1">Gerencie e organize todas as suas analogias criadas</p>
+            </div>
 
-        <AnalogyBank initialAnalogies={analogies || []} />
-      </main>
+            <AnalogyBankHeader />
+            <AnalogyBankGrid />
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

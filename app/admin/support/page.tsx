@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { isAdmin } from "@/lib/admin-utils"
-import { AdminNav } from "@/components/admin/admin-nav"
-import { SupportTickets } from "@/components/admin/support-tickets"
-import { FeedbackList } from "@/components/admin/feedback-list"
+import { SupportPage } from "@/components/admin/support-page"
 
 export default async function AdminSupportPage() {
   const supabase = await createClient()
@@ -11,24 +8,27 @@ export default async function AdminSupportPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user || !(await isAdmin(user.id))) {
-    redirect("/dashboard")
+  if (!user) {
+    return <div className="p-6 lg:p-8">Você precisa estar autenticado.</div>
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile || profile.role !== "admin") {
+    return <div className="p-6 lg:p-8">Acesso restrito aos administradores.</div>
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Suporte ao Cliente</h1>
-          <p className="text-muted-foreground">Gerencie tickets de suporte e feedback dos usuários</p>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SupportTickets />
-          <FeedbackList />
-        </div>
-      </main>
+    <div className="p-6 lg:p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Suporte</h1>
+        <p className="text-muted-foreground">Tickets e feedback dos usuários</p>
+      </div>
+      <SupportPage />
     </div>
   )
 }
