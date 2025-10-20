@@ -89,7 +89,7 @@ export function PricingComparison() {
                     <div className="text-center">
                       {typeof item.free === "boolean" ? (
                         item.free ? (
-                          <Check className="w-5 h-5 text-secondary mx-auto" />
+                          <Check className="w-5 h-5 text-accent mx-auto" />
                         ) : (
                           <X className="w-5 h-5 text-muted-foreground mx-auto" />
                         )
@@ -100,7 +100,7 @@ export function PricingComparison() {
                     <div className="text-center">
                       {typeof item.clarity === "boolean" ? (
                         item.clarity ? (
-                          <Check className="w-5 h-5 text-secondary mx-auto" />
+                          <Check className="w-5 h-5 text-accent mx-auto" />
                         ) : (
                           <X className="w-5 h-5 text-muted-foreground mx-auto" />
                         )
@@ -111,7 +111,7 @@ export function PricingComparison() {
                     <div className="text-center">
                       {typeof item.team === "boolean" ? (
                         item.team ? (
-                          <Check className="w-5 h-5 text-secondary mx-auto" />
+                          <Check className="w-5 h-5 text-accent mx-auto" />
                         ) : (
                           <X className="w-5 h-5 text-muted-foreground mx-auto" />
                         )

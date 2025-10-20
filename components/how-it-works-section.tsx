@@ -41,7 +41,7 @@ export function HowItWorksSection() {
               key={index}
               className="p-6 space-y-4 relative overflow-hidden group hover:shadow-lg transition-shadow"
             >
-              <div className="absolute top-4 right-4 text-6xl font-bold text-primary/5">{index + 1}</div>
+              <div className="absolute top-4 right-4 text-6xl font-bold text-primary/20">{index + 1}</div>
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                 <step.icon className="w-6 h-6 text-primary" />
               </div>

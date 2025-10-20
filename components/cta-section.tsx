@@ -17,7 +17,7 @@ export function CTASection() {
               Comece gratuitamente hoje e descubra como analogias criativas podem revolucionar sua comunicação.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Button size="lg" variant="secondary" className="text-lg px-8 h-12" asChild>
+              <Button size="lg" variant="accent" className="text-lg px-8 h-12" asChild>
                 <Link href="/signup">
                   Experimentar Grátis por 7 Dias
                   <ArrowRight className="ml-2 w-5 h-5" />

@@ -14,18 +14,19 @@ export function HeroSection() {
       <div className="container mx-auto max-w-6xl">
         <div className="text-center space-y-8">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium whitespace-nowrap">
             <Sparkles className="w-4 h-4" />
             Ferramenta de Geração de Analogias Criativas
           </div>
 
           {/* Main heading */}
-          <h1 className="text-5xl md:text-7xl font-bold text-balance leading-tight">
-            Transforme ideias complexas em <span className="text-primary">explicações memoráveis</span>
+          <h1 className="text-4xl md:text-5xl font-bold text-balance leading-[1.12] md:leading-tight tracking-tight">
+            <span className="block font-medium">Transforme ideias complexas em</span>
+            <span className="block font-extrabold text-primary">explicações memoráveis</span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-xl md:text-2xl text-muted-foreground text-balance max-w-3xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground text-balance max-w-3xl mx-auto leading-relaxed">
             Capacite-se para tornar conceitos abstratos e técnicos em analogias claras, envolventes e personalizadas
             para qualquer público.
           </p>
@@ -34,29 +35,48 @@ export function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-lg px-8 h-12" asChild>
               <Link href="/signup">
-                Experimentar Agora
+                Experimentar Grátis por 7 Dias
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 h-12 bg-transparent" asChild>
-              <a href="#como-funciona">Ver Como Funciona</a>
             </Button>
           </div>
 
           {/* Social proof */}
-          <div className="pt-8 flex flex-col items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              Confiado por profissionais de comunicação, educação e vendas
+          <div className="pt-10 flex flex-col items-center gap-3">
+            <p className="text-sm text-muted-foreground text-center">
+              <span className="whitespace-nowrap">Confiado por profissionais de comunicação,</span><wbr /><span className="whitespace-nowrap"> educação e vendas</span>
             </p>
-            <div className="flex items-center gap-6 opacity-60">
-              <div className="text-xs font-medium">Professores</div>
-              <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-              <div className="text-xs font-medium">Palestrantes</div>
-              <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-              <div className="text-xs font-medium">Criadores de Conteúdo</div>
-              <div className="w-1 h-1 rounded-full bg-muted-foreground" />
-              <div className="text-xs font-medium">Vendedores</div>
+            {/* Mobile: duas linhas separadas */}
+            <div className="flex flex-col items-center gap-3 sm:hidden opacity-90">
+              <ul className="flex justify-center gap-3">
+                <li><span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Professores</span></li>
+                <li><span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Palestrantes</span></li>
+                <li><span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Vendedores</span></li>
+              </ul>
+              <ul className="flex justify-center gap-3">
+                <li><span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Criadores</span></li>
+                <li><span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Estudantes</span></li>
+              </ul>
             </div>
+
+            {/* Desktop/tablet: única linha */}
+            <ul className="hidden sm:flex sm:flex-nowrap sm:justify-center sm:gap-4 opacity-90">
+              <li>
+                 <span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Professores</span>
+               </li>
+              <li>
+                 <span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Palestrantes</span>
+               </li>
+              <li>
+                 <span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Vendedores</span>
+               </li>
+              <li className="col-start-2">
+                 <span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Criadores</span>
+               </li>
+              <li className="col-start-3">
+                 <span className="text-xs font-medium whitespace-nowrap rounded-full border border-primary/20 bg-primary/10 text-primary px-2.5 py-1 md:px-3 md:py-1.5 hover:bg-primary/15 transition-colors">Estudantes</span>
+               </li>
+            </ul>
           </div>
         </div>
       </div>

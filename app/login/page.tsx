@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/login-form"
-import { Sparkles } from "lucide-react"
+import { Lightbulb } from "lucide-react"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -13,13 +13,11 @@ export default function LoginPage() {
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2 text-primary-foreground">
-            <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <span className="text-2xl font-bold">Explicaê</span>
-          </Link>
+        <div className="relative z-10 flex items-center text-lg font-medium">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center mr-2">
+            <Lightbulb className="w-6 h-6" />
+          </div>
+          Explicaê
         </div>
 
         <div className="relative z-10 space-y-6">
@@ -60,7 +58,7 @@ export default function LoginPage() {
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-2 text-foreground">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
+            <Lightbulb className="w-6 h-6" />
               </div>
               <span className="text-2xl font-bold">Explicaê</span>
             </Link>
